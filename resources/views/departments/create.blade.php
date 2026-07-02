@@ -72,8 +72,23 @@
 
                                 <input
                                     type="text"
-                                    name="strName"
-                                    value="{{ old('strName') }}"
+                                    name="DepartmentName"
+                                    value="{{ old('DepartmentName') }}"
+                                    required
+                                    class="w-full border rounded-lg px-4 py-2">
+                            </div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+
+                                <label class="block font-semibold mb-2">
+                                    Department Code
+                                </label>
+
+                                <input
+                                    type="text"
+                                    name="DepartmentCode"
+                                    value="{{ old('DepartmentCode') }}"
                                     required
                                     class="w-full border rounded-lg px-4 py-2">
                             </div>

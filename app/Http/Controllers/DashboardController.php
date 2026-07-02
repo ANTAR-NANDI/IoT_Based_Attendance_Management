@@ -11,7 +11,7 @@ class DashboardController extends Controller
     {
         $totalEmployees = DB::table('tblEmpInfo')->count();
 
-        $totalDepartments = DB::table('tblDepartmentOrder')->count();
+        $totalDepartments = DB::table('tblDepartment')->count();
 
         $totalLeaveTypes = DB::table('tblLeaveType')->count();
 

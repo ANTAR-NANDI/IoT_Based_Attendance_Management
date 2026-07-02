@@ -14,7 +14,7 @@ class EmployeeController extends Controller
     public function index(Request $request)
     {
         $query = DB::table('tblEmpInfo as e')
-            ->leftJoin('tblDepartmentOrder as d', 'e.strdepartment', '=', 'd.id')
+            ->leftJoin('tblDepartment as d', 'e.strdepartment', '=', 'd.id')
             ->leftJoin('tblDesignationOrder as des', 'e.strdesignation', '=', 'des.id')
             ->leftJoin('tblShift as s', 'e.shiftName', '=', 's.id')
             ->leftJoin('tblEmpInfo as boss', 'e.reporting_boss', '=', 'boss.id')
@@ -48,7 +48,7 @@ class EmployeeController extends Controller
      */
     public function create()
     {
-        $departments = DB::table('tblDepartmentOrder')
+        $departments = DB::table('tblDepartment')
             ->orderBy('order_by')
             ->get();
 
@@ -147,7 +147,7 @@ class EmployeeController extends Controller
             abort(404);
         }
 
-        $departments = DB::table('tblDepartmentOrder')
+        $departments = DB::table('tblDepartment')
             ->orderBy('order_by')
             ->get();
 

@@ -20,7 +20,7 @@
         </div>
 
         <form
-            action="{{ route('departments.update',$department->id) }}"
+            action="{{ route('departments.update',$department->DepartmentID) }}"
             method="POST"
             enctype="multipart/form-data">
 
@@ -32,17 +32,25 @@
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
                     <div>
-                        <label class="block font-semibold mb-2">Name</label>
+                        <label class="block font-semibold mb-2">Department Name</label>
                         <input
                             type="text"
-                            name="strName"
-                            value="{{ old('strName',$department->departmentName) }}"
+                            name="DepartmentName"
+                            value="{{ old('DepartmentName',$department->DepartmentName) }}"
                             
                             class="w-full border rounded-lg px-4 py-2 bg-gray-100">
-                    </div>
-
-                    
-
+                    </div> 
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <label class="block font-semibold mb-2">Department Code</label>
+                        <input
+                            type="text"
+                            name="DepartmentCode"
+                            value="{{ old('DepartmentCode',$department->DepartmentCode) }}"
+                            
+                            class="w-full border rounded-lg px-4 py-2 bg-gray-100">
+                    </div> 
                 </div>
 
                 <!-- Buttons -->

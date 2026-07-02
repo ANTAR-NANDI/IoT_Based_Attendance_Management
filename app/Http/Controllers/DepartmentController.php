@@ -10,17 +10,17 @@ class DepartmentController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('tblDepartmentOrder')
-            ->select('tblDepartmentOrder.*');
+        $query = DB::table('tblDepartment')
+            ->select('tblDepartment.*');
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('tblDepartmentOrder.departmentName', 'like', '%' . $request->search . '%')
-                    ->orWhere('tblDepartmentOrder.id', 'like', '%' . $request->search . '%');
+                $q->where('tblDepartment.DepartmentName', 'like', '%' . $request->search . '%')
+                    ->orWhere('tblDepartment.DepartmentID', 'like', '%' . $request->search . '%');
             });
         }
 
-        $departments = $query->orderBy('tblDepartmentOrder.id', 'DESC')
+        $departments = $query->orderBy('tblDepartment.DepartmentID', 'DESC')
             ->paginate(10)
             ->withQueryString();
 
@@ -41,15 +41,17 @@ class DepartmentController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'strName' => 'required',
+            'DepartmentName' => 'required',
+            'DepartmentCode' => 'required'
         ]);
 
         try {
 
 
 
-            DB::table('tblDepartmentOrder')->insert([
-                'departmentName' => $request->strName
+            DB::table('tblDepartment')->insert([
+                'DepartmentName' => $request->DepartmentName,
+                'DepartmentCode' => $request->DepartmentCode
             ]);
 
             return redirect()
@@ -66,10 +68,10 @@ class DepartmentController extends Controller
     /**
      * Show Edit Form
      */
-    public function edit($id)
+    public function edit($DepartmentID)
     {
-        $department = DB::table('tblDepartmentOrder')
-            ->where('id', $id)
+        $department = DB::table('tblDepartment')
+            ->where('DepartmentID', $DepartmentID)
             ->first();
 
         if (!$department) {
@@ -83,16 +85,17 @@ class DepartmentController extends Controller
     /**
      * Update Employee
      */
-    public function update(Request $request, $id)
+    public function update(Request $request, $DepartmentID)
     {
         $request->validate([
-            'strName' => 'required'
+            'DepartmentName' => 'required',
+            'DepartmentCode' => 'required'
         ]);
 
         try {
 
-            $department = DB::table('tblDepartmentOrder')
-                ->where('id', $id)
+            $department = DB::table('tblDepartment')
+                ->where('DepartmentID', $DepartmentID)
                 ->first();
 
             if (!$department) {
@@ -101,10 +104,11 @@ class DepartmentController extends Controller
 
 
 
-            DB::table('tblDepartmentOrder')
-                ->where('id', $id)
+            DB::table('tblDepartment')
+                ->where('DepartmentID', $DepartmentID)
                 ->update([
-                    'departmentName' => $request->strName
+                    'DepartmentName' => $request->DepartmentName,
+                    'DepartmentCode' => $request->DepartmentCode
                 ]);
 
             return redirect()
@@ -121,12 +125,12 @@ class DepartmentController extends Controller
     /**
      * Delete Employee
      */
-    public function destroy($id)
+    public function destroy($DepartmentID)
     {
         try {
 
-            DB::table('tblDepartmentOrder')
-                ->where('id', $id)
+            DB::table('tblDepartment')
+                ->where('DepartmentID', $DepartmentID)
                 ->delete();
 
             return redirect()

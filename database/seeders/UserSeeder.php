@@ -48,13 +48,13 @@ class UserSeeder extends Seeder
 
         // 2. Seed Clean Departments Data into tblDepartmentOrder
         $departments = [
-            ['departmentName' => 'Human Resources', 'order_by' => 1],
-            ['departmentName' => 'Information Technology', 'order_by' => 2],
-            ['departmentName' => 'Production Department', 'order_by' => 3],
-            ['departmentName' => 'Finance & Accounts', 'order_by' => 4],
+            ['DepartmentName' => 'Human Resources', 'DepartmentCode' => 1],
+            ['DepartmentName' => 'Information Technology', 'DepartmentCode' => 2],
+            ['DepartmentName' => 'Production Department', 'DepartmentCode' => 3],
+            ['DepartmentName' => 'Finance & Accounts', 'DepartmentCode' => 4],
         ];
         foreach ($departments as $dept) {
-            DB::table('tblDepartmentOrder')->updateOrInsert(['departmentName' => $dept['departmentName']], $dept);
+            DB::table('tblDepartment')->updateOrInsert(['DepartmentName' => $dept['DepartmentName']], $dept);
         }
 
         // 3. Seed Clean Designations Data into tblDeignationOrder

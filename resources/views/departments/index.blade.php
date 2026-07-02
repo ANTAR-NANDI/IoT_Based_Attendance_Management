@@ -96,7 +96,7 @@
 
 
                         <td class="px-4 py-3">
-                            {{ $department->departmentName }}
+                            {{ $department->DepartmentName }}
                         </td>
 
 
@@ -104,7 +104,7 @@
 
                             <div class="flex justify-center gap-2">
 
-                                <a href="{{ route('departments.edit',$department->id) }}"
+                                <a href="{{ route('departments.edit',$department->DepartmentID) }}"
                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
 
                                     Edit
@@ -112,7 +112,7 @@
                                 </a>
 
                                 <form method="POST"
-                                      action="{{ route('departments.destroy',$department->id) }}"
+                                      action="{{ route('departments.destroy',$department->DepartmentID) }}"
                                       onsubmit="return confirm('Delete this Department?')">
 
                                     @csrf
