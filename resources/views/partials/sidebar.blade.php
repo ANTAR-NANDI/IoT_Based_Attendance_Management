@@ -1,0 +1,63 @@
+<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col h-full shadow-xl z-20">
+    <div class="p-5 bg-slate-950 flex items-center border-b border-slate-800 h-16 shrink-0">
+        <div class="flex items-center space-x-3">
+            <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-black text-white tracking-wider">H</div>
+            <span class="text-lg font-bold tracking-wider text-white">HRM W3</span>
+        </div>
+    </div>
+
+    <nav class="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto">
+        <a href="{{ route('dashboard') }}" class="flex items-center space-x-3 px-4 py-2.5 rounded-lg text-sm font-semibold {{ Route::currentRouteName() == 'dashboard' ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20' : 'text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition' }}">
+            <span class="text-base">📊</span>
+            <span>Dashboard</span>
+        </a>
+        
+        <div  class="pt-5 pb-1 px-4 text-xs font-bold text-slate-500 uppercase tracking-wider">Master Registry</div>
+        <a onclick="window.location.href='{{ route('employees.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">🏢</span>
+            <span>Employees</span>
+        </a>
+        <a onclick="window.location.href='{{ route('departments.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">📁</span>
+            <span>Departments</span>
+        </a>
+        <a onclick="window.location.href='{{ route('designations.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">👥</span>
+            <span>Designations</span>
+        </a>
+         <a onclick="window.location.href='{{ route('shifts.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">⏱️</span>
+            <span>Shifts</span>
+        </a>
+        <a onclick="window.location.href='{{ route('holidays.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">🎓</span>
+            <span>Holidays</span>
+        </a>
+        <div class="space-y-1 relative">
+           <input type="checkbox" id="leave-toggle" class="peer hidden" />
+
+        <label for="leave-toggle" class="w-full flex items-center justify-between px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition cursor-pointer select-none">
+            <div class="flex items-center space-x-3">
+                <span class="text-sm">📅</span>
+                <span>Leave</span>
+            </div>
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform transition-transform duration-200 peer-checked:rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+            </svg>
+        </label>
+
+        <div class="hidden peer-checked:block pl-11 space-y-1">
+            <a onclick="window.location.href='{{ route('leave_types.index') }}'" href="#" class="block px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+                Leave Type
+            </a>
+            
+            <a onclick="window.location.href='{{ route('leaves.create') }}'" href="#" class="block px-4 py-2 rounded-lg text-xs font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+                Leave Apply
+            </a>
+        </div>
+</div>
+        
+
+    
+    </nav>
+</aside>
