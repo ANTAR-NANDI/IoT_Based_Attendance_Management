@@ -4,11 +4,11 @@ use App\Http\Controllers\Auth\LoginSessionController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
-use App\Http\Controllers\EmployeeController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveTypeController;
 use App\Http\Controllers\ShiftController;
+use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
 use Illuminate\Support\Facades\Route;
 
@@ -28,9 +28,11 @@ Route::middleware('auth')->group(function () {
 
     // Employee Entry form sits cleanly on the primary landing path
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    Route::resource('dashboard/teachers', TeacherController::class);
+
     Route::resource('dashboard/departments', DepartmentController::class);
     Route::resource('dashboard/designations', DesignationController::class);
+    Route::resource('dashboard/teachers', TeacherController::class);
+    Route::resource('dashboard/subjects', SubjectController::class);
     Route::resource('dashboard/shifts', ShiftController::class);
     Route::resource('dashboard/holidays', HolidayController::class);
     Route::resource('dashboard/leave_types', LeaveTypeController::class);
