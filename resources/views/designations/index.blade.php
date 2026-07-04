@@ -96,7 +96,7 @@
 
 
                         <td class="px-4 py-3">
-                            {{ $designation->designation }}
+                            {{ $designation->DesignationName }}
                         </td>
 
 
@@ -104,7 +104,7 @@
 
                             <div class="flex justify-center gap-2">
 
-                                <a href="{{ route('designations.edit',$designation->id) }}"
+                                <a href="{{ route('designations.edit',$designation->DesignationID) }}"
                                    class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-sm">
 
                                     Edit
@@ -112,7 +112,7 @@
                                 </a>
 
                                 <form method="POST"
-                                      action="{{ route('designations.destroy',$designation->id) }}"
+                                      action="{{ route('designations.destroy',$designation->DesignationID) }}"
                                       onsubmit="return confirm('Delete this Designation?')">
 
                                     @csrf

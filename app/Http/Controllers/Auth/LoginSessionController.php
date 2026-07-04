@@ -26,9 +26,9 @@ class LoginSessionController extends Controller
             'email' => ['required', 'string', 'email'],
             'password' => ['required', 'string'],
         ]);
-
         // Attempt authentication using the credentials stored in your users table
         if (!Auth::attempt($credentials, $request->boolean('remember'))) {
+
             throw ValidationException::withMessages([
                 'email' => __('The provided credentials do not match our organizational records.'),
             ]);

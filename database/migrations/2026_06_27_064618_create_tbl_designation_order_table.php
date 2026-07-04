@@ -8,11 +8,11 @@ return new class extends Migration
 {
     public function up(): void
     {
-        if (!Schema::hasTable('tblDesignationOrder')) {
-            Schema::create('tblDesignationOrder', function (Blueprint $table) {
-                $table->id();
-                $table->string('designation', 150);
-                $table->integer('numOrder')->default(0);
+        if (!Schema::hasTable('tblDesignation')) {
+            Schema::create('tblDesignation', function (Blueprint $table) {
+                $table->id('DesignationID');
+                $table->string('DesignationName', 150);
+                $table->boolean('Status')->default(true);
                 $table->timestamps();
             });
         }

@@ -9,15 +9,15 @@
 
         <div>
             <h1 class="text-3xl font-bold text-slate-800">
-                Add Department
+                Add Designation
             </h1>
 
             <p class="text-slate-500 mt-1">
-                Create a new Department
+                Create a new Designation
             </p>
         </div>
 
-        <a href="{{ route('departments.index') }}"
+        <a href="{{ route('designations.index') }}"
            class="px-5 py-2 rounded-lg bg-slate-700 text-white hover:bg-slate-800">
             ← Back
         </a>
@@ -43,7 +43,7 @@
 
     @endif
 
-    <form action="{{ route('departments.store') }}"
+    <form action="{{ route('designations.store') }}"
           method="POST"
           enctype="multipart/form-data">
 
@@ -54,7 +54,7 @@
             <div class="bg-slate-800 text-white px-6 py-4">
 
                 <h2 class="text-lg font-semibold">
-                    Department Information
+                    Designation Information
                 </h2>
 
             </div>
@@ -67,7 +67,7 @@
                             <div>
 
                                 <label class="block font-semibold mb-2">
-                                    Department Name
+                                    Designation Name
                                 </label>
 
                                 <input
@@ -85,7 +85,7 @@
         <!-- Buttons -->
         <div class="flex justify-end gap-3 mt-8 pt-6">
 
-            <a href="{{ route('departments.index') }}"
+            <a href="{{ route('designations.index') }}"
                class="px-6 py-2 bg-gray-500 text-white rounded-lg hover:bg-gray-600">
 
                 Cancel
@@ -104,7 +104,7 @@
                 type="submit"
                 class="px-8 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
 
-                Save Department
+                Save Designation
 
             </button>
 

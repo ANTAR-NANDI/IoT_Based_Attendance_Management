@@ -20,7 +20,7 @@
         </div>
 
         <form
-            action="{{ route('designations.update',$designation->id) }}"
+            action="{{ route('designations.update',$designation->DesignationID) }}"
             method="POST"
             enctype="multipart/form-data">
 
@@ -36,7 +36,7 @@
                         <input
                             type="text"
                             name="strName"
-                            value="{{ old('strName',$designation->designation) }}"
+                            value="{{ old('strName',$designation->DesignationName) }}"
                             
                             class="w-full border rounded-lg px-4 py-2 bg-gray-100">
                     </div>

@@ -10,17 +10,17 @@ class DesignationController extends Controller
 {
     public function index(Request $request)
     {
-        $query = DB::table('tblDesignationOrder')
-            ->select('tblDesignationOrder.*');
+        $query = DB::table('tblDesignation')
+            ->select('tblDesignation.*');
 
         if ($request->filled('search')) {
             $query->where(function ($q) use ($request) {
-                $q->where('tblDesignationOrder.designation', 'like', '%' . $request->search . '%')
-                    ->orWhere('tblDesignationOrder.id', 'like', '%' . $request->search . '%');
+                $q->where('tblDesignation.DesignationName', 'like', '%' . $request->search . '%')
+                    ->orWhere('tblDesignation.DesignationID', 'like', '%' . $request->search . '%');
             });
         }
 
-        $designations = $query->orderBy('tblDesignationOrder.id', 'DESC')
+        $designations = $query->orderBy('tblDesignation.DesignationID', 'DESC')
             ->paginate(10)
             ->withQueryString();
 
@@ -45,13 +45,13 @@ class DesignationController extends Controller
         ]);
 
         try {
-            DB::table('tblDesignationOrder')->insert([
-                'departmentName' => $request->strName
+            DB::table('tblDesignation')->insert([
+                'DesignationName' => $request->strName
             ]);
 
             return redirect()
                 ->route('designations.index')
-                ->with('success', 'Department Added Successfully');
+                ->with('success', 'Designation Added Successfully');
         } catch (Exception $e) {
 
             return back()
@@ -65,8 +65,8 @@ class DesignationController extends Controller
      */
     public function edit($id)
     {
-        $designation = DB::table('tblDesignationOrder')
-            ->where('id', $id)
+        $designation = DB::table('tblDesignation')
+            ->where('DesignationID', $id)
             ->first();
 
         if (!$designation) {
@@ -88,8 +88,8 @@ class DesignationController extends Controller
 
         try {
 
-            $designation = DB::table('tblDesignationOrder')
-                ->where('id', $id)
+            $designation = DB::table('tblDesignation')
+                ->where('DesignationID', $id)
                 ->first();
 
             if (!$designation) {
@@ -98,10 +98,10 @@ class DesignationController extends Controller
 
 
 
-            DB::table('tblDesignationOrder')
-                ->where('id', $id)
+            DB::table('tblDesignation')
+                ->where('DesignationID', $id)
                 ->update([
-                    'designation' => $request->strName
+                    'DesignationName' => $request->strName
                 ]);
 
             return redirect()
