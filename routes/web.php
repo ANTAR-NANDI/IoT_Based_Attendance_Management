@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AttendanceLogController;
 use App\Http\Controllers\Auth\LoginSessionController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\DashboardController;
@@ -45,6 +46,11 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/holidays', HolidayController::class);
     Route::resource('dashboard/leave_types', LeaveTypeController::class);
     Route::resource('dashboard/leaves', LeaveController::class);
+    Route::prefix('attendance-logs')->name('attendance-logs.')->group(function () {
 
+        Route::get('/', [AttendanceLogController::class, 'index'])->name('index');
+
+        Route::post('/sync', [AttendanceLogController::class, 'sync'])->name('sync');
+    });
     Route::post('/logout', [LoginSessionController::class, 'destroy'])->name('logout');
 });

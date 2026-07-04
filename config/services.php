@@ -13,6 +13,17 @@ return [
     | a conventional file to locate the various service credentials.
     |
     */
+    'zk' => [
+
+        'url'      => env('ZK_API_URL'),
+
+        'username' => env('ZK_API_USERNAME'),
+
+        'password' => env('ZK_API_PASSWORD'),
+
+        'endpoint' => env('ZK_API_ENDPOINT'),
+
+    ],
 
     'postmark' => [
         'token' => env('POSTMARK_TOKEN'),
