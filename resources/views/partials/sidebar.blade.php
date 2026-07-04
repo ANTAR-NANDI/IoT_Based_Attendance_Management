@@ -40,6 +40,7 @@
                     ['route' => 'batches.index',        'label' => 'Batches',       'icon' => 'users'],
                     ['route' => 'rooms.index',          'label' => 'Rooms',         'icon' => 'door'],
                     ['route' => 'devices.index',        'label' => 'Devices',       'icon' => 'device'],
+                    ['route' => 'routines.index',       'label' => 'Routines',       'icon' => 'book'],
                 ];
             @endphp
 

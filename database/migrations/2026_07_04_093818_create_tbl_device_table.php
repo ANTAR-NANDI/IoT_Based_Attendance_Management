@@ -27,8 +27,7 @@ return new class extends Migration
             $table->foreign('RoomID')
                 ->references('RoomID')
                 ->on('tblRoom')
-                ->cascadeOnUpdate()
-                ->noActionOnDelete();
+                ->cascadeOnUpdate();
         });
     }
 
