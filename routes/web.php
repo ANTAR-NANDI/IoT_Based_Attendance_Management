@@ -8,6 +8,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LeaveTypeController;
+use App\Http\Controllers\RoomController;
 use App\Http\Controllers\ShiftController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\TeacherController;
@@ -35,6 +36,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/teachers', TeacherController::class);
     Route::resource('dashboard/subjects', SubjectController::class);
     Route::resource('dashboard/batches', BatchController::class);
+    Route::resource('dashboard/rooms', RoomController::class);
     Route::resource('dashboard/shifts', ShiftController::class);
     Route::resource('dashboard/holidays', HolidayController::class);
     Route::resource('dashboard/leave_types', LeaveTypeController::class);
