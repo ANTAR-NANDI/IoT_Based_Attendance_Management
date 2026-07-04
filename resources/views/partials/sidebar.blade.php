@@ -1,11 +1,19 @@
 <aside class="w-64 bg-slate-950 text-slate-300 flex flex-col h-full border-r border-slate-800/80 z-20">
 
     {{-- Logo --}}
-    <div class="px-5 h-16 shrink-0 flex items-center border-b border-slate-800/80">
+    <div class="px-5 h-16 shrink-0 flex items-center justify-between border-b border-slate-800/80">
         <div class="flex items-center space-x-3">
             <div class="h-8 w-8 rounded-lg bg-indigo-600 flex items-center justify-center font-bold text-white text-sm">H</div>
             <span class="text-[15px] font-semibold tracking-wide text-white">HRM W3</span>
         </div>
+
+        <button
+            @click="sidebarOpen = false"
+            class="lg:hidden p-1.5 rounded-lg text-slate-400 hover:bg-slate-800 hover:text-white">
+            <svg class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
     </div>
 
     <nav class="flex-1 px-3 py-5 space-y-6 overflow-y-auto">
@@ -40,7 +48,7 @@
                     ['route' => 'batches.index',        'label' => 'Batches',       'icon' => 'users'],
                     ['route' => 'rooms.index',          'label' => 'Rooms',         'icon' => 'door'],
                     ['route' => 'devices.index',        'label' => 'Devices',       'icon' => 'device'],
-                    ['route' => 'routines.index',       'label' => 'Routines',       'icon' => 'book'],
+                    ['route' => 'routines.index',       'label' => 'Routines',      'icon' => 'book'],
                 ];
             @endphp
 

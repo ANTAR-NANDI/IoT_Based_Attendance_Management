@@ -6,22 +6,39 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>@yield('title', 'Enterprise HRM')</title>
+      <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+      <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+
+    <style>[x-cloak] { display: none !important; }</style>
 
     @stack('styles')
 </head>
 
-<body class="h-full bg-slate-100 text-slate-800 antialiased">
+<body class="h-full bg-slate-100 text-slate-800 antialiased" x-data="{ sidebarOpen: false }">
 
 @auth
 
 <div class="flex h-screen overflow-hidden">
 
-    {{-- Sidebar --}}
-    @include('partials.sidebar')
+    {{-- Mobile overlay --}}
+    <div
+        x-show="sidebarOpen"
+        x-cloak
+        @click="sidebarOpen = false"
+        class="fixed inset-0 bg-black/50 z-30 lg:hidden">
+    </div>
 
-    <div class="flex flex-1 flex-col overflow-hidden">
+    {{-- Sidebar --}}
+    <div
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
+        class="fixed inset-y-0 left-0 z-40 transform transition-transform duration-200 ease-in-out
+               lg:static lg:translate-x-0 lg:z-auto">
+        @include('partials.sidebar')
+    </div>
+
+    <div class="flex flex-1 flex-col overflow-hidden min-w-0">
 
         {{-- Topbar --}}
         @include('partials.topbar')
