@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Auth\LoginSessionController;
+use App\Http\Controllers\BatchController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
@@ -33,6 +34,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/designations', DesignationController::class);
     Route::resource('dashboard/teachers', TeacherController::class);
     Route::resource('dashboard/subjects', SubjectController::class);
+    Route::resource('dashboard/batches', BatchController::class);
     Route::resource('dashboard/shifts', ShiftController::class);
     Route::resource('dashboard/holidays', HolidayController::class);
     Route::resource('dashboard/leave_types', LeaveTypeController::class);

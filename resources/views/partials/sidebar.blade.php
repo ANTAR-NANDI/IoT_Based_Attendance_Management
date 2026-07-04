@@ -29,6 +29,10 @@
             <span class="text-sm">🏢</span>
             <span>Subjects</span>
         </a>
+        <a onclick="window.location.href='{{ route('batches.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
+            <span class="text-sm">🏢</span>
+            <span>Batches</span>
+        </a>
         
        
          <a onclick="window.location.href='{{ route('shifts.index') }}'" href="#" class="flex items-center space-x-3 px-4 py-2 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-slate-100 transition">
