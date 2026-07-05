@@ -52,5 +52,8 @@ Route::middleware('auth')->group(function () {
 
         Route::post('/sync', [AttendanceLogController::class, 'sync'])->name('sync');
     });
+
+    Route::get('dashboard/reports/class-attendance', [AttendanceLogController::class, 'classAttendance'])
+        ->name('reports.class-attendance');
     Route::post('/logout', [LoginSessionController::class, 'destroy'])->name('logout');
 });

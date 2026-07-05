@@ -45,7 +45,7 @@ class RoutineSeeder extends Seeder
 
         $startDate = Carbon::today();
 
-        for ($day = 0; $day < 30; $day++) {
+        for ($day = 1; $day < 30; $day++) {
 
             $date = $startDate->copy()->addDays($day);
 

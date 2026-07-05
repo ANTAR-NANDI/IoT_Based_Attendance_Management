@@ -11,7 +11,7 @@ class RoomSeeder extends Seeder
     {
         DB::table('tblRoom')->delete();
 
-        DB::statement("DBCC CHECKIDENT ('tblRoom', RESEED, 0)");
+        DB::statement("DBCC CHECKIDENT ('tblRoom', RESEED, 1)");
 
         $rooms = [
 

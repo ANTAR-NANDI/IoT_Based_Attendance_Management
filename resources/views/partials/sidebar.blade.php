@@ -177,6 +177,23 @@
                 </div>
             </div>
         </div>
+        <div class="space-y-1">
+            <div class="px-4 pb-1 text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Reports</div>
+
+            <a onclick="window.location.href='{{ route('reports.class-attendance') }}'" href="#"
+               class="group relative flex items-center space-x-3 pl-4 pr-3 py-2 rounded-lg text-sm font-medium transition
+                      {{ Route::currentRouteName() == 'reports.class-attendance'
+                            ? 'bg-indigo-600/15 text-white'
+                            : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                @if (Route::currentRouteName() == 'reports.class-attendance')
+                    <span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-indigo-500"></span>
+                @endif
+                <svg class="w-[17px] h-[17px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Attendance Report</span>
+            </a>
+        </div>
 
     </nav>
 </aside>

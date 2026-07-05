@@ -25,7 +25,7 @@ class DeviceSeeder extends Seeder
 
             $devices[] = [
 
-                'DeviceName' => 'Attendance Device - Room ' . $room->RoomNo,
+                'DeviceName' => 'Room ' . $room->RoomNo,
 
                 'RoomID' => $room->RoomID,
 

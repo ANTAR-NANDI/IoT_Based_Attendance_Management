@@ -11,7 +11,7 @@ class BatchSeeder extends Seeder
     {
         DB::table('tblBatch')->delete();
 
-        DB::statement("DBCC CHECKIDENT ('tblBatch', RESEED, 0)");
+        DB::statement("DBCC CHECKIDENT ('tblBatch', RESEED, 1)");
 
         $batches = [
 

@@ -17,17 +17,17 @@ class DatabaseSeeder extends Seeder
 
         $this->call([
             UserSeeder::class,
-            TeacherSeeder::class,
-            SubjectSeeder::class,
-            BatchSeeder::class,
-            RoomSeeder::class,
-            DeviceSeeder::class,
-            RoutineSeeder::class,
-            ShiftSeeder::class,
-            HolidaySeeder::class,
-            LeaveTypeSeeder::class,
-            LeaveSeeder::class,
-            AttendanceLogSeeder::class
+            // TeacherSeeder::class,
+            // SubjectSeeder::class,
+            // BatchSeeder::class,
+            // RoomSeeder::class,
+            // DeviceSeeder::class,
+            // RoutineSeeder::class,
+            // ShiftSeeder::class,
+            // HolidaySeeder::class,
+            // LeaveTypeSeeder::class,
+            // LeaveSeeder::class,
+            // AttendanceLogSeeder::class
 
         ]);
     }
