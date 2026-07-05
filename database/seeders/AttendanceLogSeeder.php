@@ -17,10 +17,10 @@ class AttendanceLogSeeder extends Seeder
         $logs = [];
 
         // Employees 1-10
-        for ($employee = 1; $employee <= 5; $employee++) {
+        for ($employee = 1; $employee <= 10; $employee++) {
 
             // 30 Days Attendance
-            for ($day = 7; $day <= 10; $day++) {
+            for ($day = 7; $day <= 30; $day++) {
 
                 $date = "2026-06-" . str_pad($day, 2, '0', STR_PAD_LEFT);
 

@@ -21,23 +21,30 @@ class UserSeeder extends Seeder
         ]);
 
 
-        // 2. Seed Clean Departments Data into tblDepartmentOrder
+        // 2. Seed Clean Departments Data into tblDepartment
         $departments = [
-            ['DepartmentName' => 'Human Resources', 'DepartmentCode' => 1],
-            ['DepartmentName' => 'Information Technology', 'DepartmentCode' => 2],
-            ['DepartmentName' => 'Production Department', 'DepartmentCode' => 3],
-            ['DepartmentName' => 'Finance & Accounts', 'DepartmentCode' => 4],
+            ['DepartmentName' => 'Computer Science & Engineering', 'DepartmentCode' => 1001],
+            ['DepartmentName' => 'Electrical & Electronics Engineering', 'DepartmentCode' => 1002],
+            ['DepartmentName' => 'Business Administration', 'DepartmentCode' => 1003],
+            ['DepartmentName' => 'Law', 'DepartmentCode' => 1004],
+            ['DepartmentName' => 'History', 'DepartmentCode' => 1005],
+            ['DepartmentName' => 'Economics', 'DepartmentCode' => 1006],
+            ['DepartmentName' => 'English', 'DepartmentCode' => 1007],
+            ['DepartmentName' => 'Math', 'DepartmentCode' => 1008],
+            ['DepartmentName' => 'Forestry', 'DepartmentCode' => 1009],
+            ['DepartmentName' => 'Fisheries', 'DepartmentCode' => 1010]
         ];
         foreach ($departments as $dept) {
             DB::table('tblDepartment')->updateOrInsert(['DepartmentName' => $dept['DepartmentName']], $dept);
         }
 
-        // 3. Seed Clean Designations Data into tblDeignationOrder
+        // 3. Seed Clean Designations Data into tblDeignation
         $designations = [
-            ['DesignationName' => 'Software Engineer',],
-            ['DesignationName' => 'HR Officer'],
-            ['DesignationName' => 'Floor Supervisor'],
-            ['DesignationName' => 'Accountant'],
+            ['DesignationName' => 'Lecturer',],
+            ['DesignationName' => 'Assistant Professor'],
+            ['DesignationName' => 'Professor'],
+            ['DesignationName' => 'Chairman'],
+            ['DesignationName' => 'Dean']
         ];
         foreach ($designations as $desig) {
             DB::table('tblDesignation')->updateOrInsert(['DesignationName' => $desig['DesignationName']], $desig);

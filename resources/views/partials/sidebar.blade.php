@@ -165,9 +165,9 @@
                                             : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
                                 Leave type
                             </a>
-                            <a onclick="window.location.href='{{ route('leaves.create') }}'" href="#"
+                            <a onclick="window.location.href='{{ route('leaves.index') }}'" href="#"
                                class="block px-3 py-1.5 rounded-md text-[13px] font-medium transition
-                                      {{ Route::currentRouteName() == 'leaves.create'
+                                      {{ Route::currentRouteName() == 'leaves.index'
                                             ? 'text-white bg-indigo-600/15'
                                             : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
                                 Leave apply

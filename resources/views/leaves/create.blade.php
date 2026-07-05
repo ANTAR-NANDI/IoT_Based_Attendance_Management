@@ -114,8 +114,8 @@
 
                             @foreach($employees as $employee)
 
-                                <option value="{{ $employee->id }}">
-                                    {{ $employee->strName }} ({{ $employee->User_id }})
+                                <option value="{{ $employee->TeacherID }}">
+                                    {{ $employee->TeacherName }} ({{ $employee->Mobile }})
                                 </option>
 
                             @endforeach

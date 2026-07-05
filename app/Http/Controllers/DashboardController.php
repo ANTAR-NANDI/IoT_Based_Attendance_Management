@@ -9,20 +9,24 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalEmployees = DB::table('tblEmpInfo')->count();
+        $totalTeachers     = DB::table('tblTeacher')->count();
+        $totalDepartments  = DB::table('tblDepartment')->count();
+        $totalSubjects     = DB::table('tblSubject')->count();
+        $totalBatches      = DB::table('tblBatch')->count();
+        $totalRooms        = DB::table('tblRoom')->count();
+        $totalDevices      = DB::table('tblDevice')->count();
+        $totalLeaveTypes   = DB::table('tblLeaveType')->count();
+        $pendingLeaves     = DB::table('tblLeave')->where('status', 'Pending')->count();
 
-        $totalDepartments = DB::table('tblDepartment')->count();
-
-        $totalLeaveTypes = DB::table('tblLeaveType')->count();
-
-        $pendingLeaves = DB::table('tblLeave')
-            ->where('status', 'Pending')
-            ->count();
 
         return view('dashboard', compact(
-            'totalEmployees',
+            'totalTeachers',
+            'totalSubjects',
+            'totalRooms',
             'totalDepartments',
             'totalLeaveTypes',
+            'totalBatches',
+            'totalDevices',
             'pendingLeaves'
         ));
     }
