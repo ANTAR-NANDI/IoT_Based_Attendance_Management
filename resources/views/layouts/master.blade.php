@@ -11,7 +11,48 @@
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
 
-    <style>[x-cloak] { display: none !important; }</style>
+    <style>
+        [x-cloak] { display: none !important; }
+
+        /* School management palette: navy foundation, blue actions, teal success. */
+        :root {
+            --brand-navy: #173b63;
+            --brand-blue: #2563eb;
+            --brand-blue-hover: #1d4ed8;
+            --brand-teal: #0f766e;
+            --brand-teal-hover: #0d5f59;
+            --brand-slate: #475569;
+            --brand-slate-hover: #334155;
+            --brand-amber: #d97706;
+            --brand-amber-hover: #b45309;
+            --brand-rose: #dc2626;
+            --brand-rose-hover: #b91c1c;
+        }
+
+        body { background-color: #f1f5f9; }
+
+        [class~="bg-slate-800"] { background-color: var(--brand-navy) !important; }
+        [class~="bg-slate-700"], [class~="bg-gray-500"] { background-color: var(--brand-slate) !important; }
+        [class~="bg-indigo-600"], [class~="bg-blue-600"] { background-color: var(--brand-blue) !important; }
+        [class~="bg-green-600"] { background-color: var(--brand-teal) !important; }
+        [class~="bg-yellow-500"] { background-color: var(--brand-amber) !important; }
+        [class~="bg-red-500"], [class~="bg-red-600"] { background-color: var(--brand-rose) !important; }
+
+        [class~="hover:bg-slate-800"]:hover,
+        [class~="hover:bg-gray-600"]:hover { background-color: var(--brand-slate-hover) !important; }
+        [class~="hover:bg-indigo-700"]:hover,
+        [class~="hover:bg-blue-700"]:hover { background-color: var(--brand-blue-hover) !important; }
+        [class~="hover:bg-green-700"]:hover { background-color: var(--brand-teal-hover) !important; }
+        [class~="hover:bg-yellow-600"]:hover { background-color: var(--brand-amber-hover) !important; }
+        [class~="hover:bg-red-600"]:hover,
+        [class~="hover:bg-red-700"]:hover { background-color: var(--brand-rose-hover) !important; }
+
+        input:focus, select:focus, textarea:focus {
+            border-color: var(--brand-blue) !important;
+            outline: 2px solid rgb(37 99 235 / 0.2);
+            outline-offset: 1px;
+        }
+    </style>
 
     @stack('styles')
 </head>

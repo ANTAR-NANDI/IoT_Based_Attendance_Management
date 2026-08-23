@@ -193,6 +193,20 @@
                 </svg>
                 <span>Attendance Report</span>
             </a>
+
+            <a onclick="window.location.href='{{ route('reports.teacher-attendance') }}'" href="#"
+               class="group relative flex items-center space-x-3 pl-4 pr-3 py-2 rounded-lg text-sm font-medium transition
+                      {{ request()->routeIs('reports.teacher-attendance*')
+                            ? 'bg-indigo-600/15 text-white'
+                            : 'text-slate-400 hover:bg-slate-800/60 hover:text-slate-100' }}">
+                @if (request()->routeIs('reports.teacher-attendance*'))
+                    <span class="absolute left-0 top-1.5 bottom-1.5 w-[3px] rounded-r-full bg-indigo-500"></span>
+                @endif
+                <svg class="w-[17px] h-[17px] shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.75">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.5 20.25a7.5 7.5 0 0115 0M4.5 20.25a7.5 7.5 0 00-3-6M19.5 20.25a7.5 7.5 0 003-6" />
+                </svg>
+                <span>Teacher Attendance</span>
+            </a>
         </div>
 
     </nav>

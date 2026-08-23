@@ -50,5 +50,9 @@ Route::middleware('auth')->group(function () {
         ->name('reports.class-attendance');
     Route::get('/reports/class-attendance/export', [AttendanceLogController::class, 'exportPdf'])
         ->name('reports.class-attendance.export');
+    Route::get('/reports/teacher-attendance', [AttendanceLogController::class, 'teacherAttendance'])
+        ->name('reports.teacher-attendance');
+    Route::get('/reports/teacher-attendance/{teacherId}', [AttendanceLogController::class, 'teacherAttendanceDetail'])
+        ->name('reports.teacher-attendance.detail');
     Route::post('/logout', [LoginSessionController::class, 'destroy'])->name('logout');
 });

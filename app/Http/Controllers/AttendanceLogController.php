@@ -36,6 +36,53 @@ class AttendanceLogController extends Controller
             ->download("class-attendance-{$fromDate}-to-{$toDate}.pdf");
     }
 
+    /** Shows every teacher with attendance totals for the selected reporting period. */
+    public function teacherAttendance(Request $request)
+    {
+        [$report, , $fromDate, $toDate] = $this->buildReport($request);
+
+        $metricsByTeacher = $report->groupBy('TeacherID')
+            ->map(fn ($rows) => $this->teacherMetrics($rows));
+
+        $teachers = DB::table('tblTeacher as t')
+            ->leftJoin('tblDepartment as d', 't.DepartmentID', '=', 'd.DepartmentID')
+            ->select('t.TeacherID', 't.TeacherName', 't.EmployeeID', 't.ZKUserID', 'd.DepartmentName')
+            ->when($request->filled('search'), function ($query) use ($request) {
+                $search = $request->search;
+                $query->where(function ($inner) use ($search) {
+                    $inner->where('t.TeacherName', 'like', "%{$search}%")
+                        ->orWhere('t.EmployeeID', 'like', "%{$search}%")
+                        ->orWhere('d.DepartmentName', 'like', "%{$search}%");
+                });
+            })
+            ->orderBy('t.TeacherName')
+            ->paginate(15)
+            ->through(function ($teacher) use ($metricsByTeacher) {
+                $teacher->metrics = $metricsByTeacher->get($teacher->TeacherID, $this->emptyTeacherMetrics());
+                return $teacher;
+            });
+
+        return view('reports.teacher-attendance', compact('teachers', 'fromDate', 'toDate'));
+    }
+
+    /** Shows the complete attendance history and metrics for one teacher. */
+    public function teacherAttendanceDetail(Request $request, int $teacherId)
+    {
+        $teacher = DB::table('tblTeacher as t')
+            ->leftJoin('tblDepartment as d', 't.DepartmentID', '=', 'd.DepartmentID')
+            ->select('t.*', 'd.DepartmentName')
+            ->where('t.TeacherID', $teacherId)
+            ->first();
+
+        abort_unless($teacher, 404);
+
+        $request->merge(['TeacherID' => $teacherId]);
+        [$report, , $fromDate, $toDate] = $this->buildReport($request);
+        $metrics = $this->teacherMetrics($report);
+
+        return view('reports.teacher-attendance-detail', compact('teacher', 'report', 'metrics', 'fromDate', 'toDate'));
+    }
+
     /** Reconciles every scheduled class with punches from its assigned room device. */
     private function buildReport(Request $request): array
     {
@@ -90,7 +137,7 @@ class AttendanceLogController extends Controller
                 ))->values();
 
             $result = [
-                'RoutineID' => $routine->RoutineID, 'RoutineDate' => $routine->RoutineDate, 'DayName' => $routine->DayName,
+                'RoutineID' => $routine->RoutineID, 'TeacherID' => $routine->TeacherID, 'RoutineDate' => $routine->RoutineDate, 'DayName' => $routine->DayName,
                 'StartTime' => $routine->StartTime, 'EndTime' => $routine->EndTime, 'SubjectName' => $routine->SubjectName,
                 'BatchName' => $routine->BatchName, 'RoomNo' => $routine->RoomNo, 'AssignedTeacher' => $routine->TeacherName,
                 'ActualTeacher' => null, 'Status' => 'Absent', 'CheckIn' => null, 'CheckOut' => null,
@@ -126,6 +173,36 @@ class AttendanceLogController extends Controller
         })->values();
 
         return [$report, $summary, $fromDate, $toDate];
+    }
+
+    private function teacherMetrics($rows): array
+    {
+        $attendedStatuses = collect(['Present', 'Incomplete Punch']);
+        $attendedRows = $rows->whereIn('Status', $attendedStatuses);
+        $dailyRows = $rows->groupBy('RoutineDate');
+
+        return [
+            'ScheduledDays' => $dailyRows->count(),
+            'AttendedDays' => $attendedRows->pluck('RoutineDate')->unique()->count(),
+            'FullyPresentDays' => $dailyRows->filter(fn ($day) => $day->every(fn ($row) => $row['Status'] === 'Present'))->count(),
+            'TotalClasses' => $rows->count(),
+            'Present' => $rows->where('Status', 'Present')->count(),
+            'Late' => $rows->filter(fn ($row) => $row['LateByMinutes'] !== null)->count(),
+            'Absent' => $rows->where('Status', 'Absent')->count(),
+            'MissedClasses' => $rows->where('Status', 'Absent')->count(),
+            'Proxy' => $rows->where('Status', 'Proxy')->count(),
+            'Incomplete' => $rows->where('Status', 'Incomplete Punch')->count(),
+            'LeftEarly' => $rows->filter(fn ($row) => $row['LeftEarlyByMinutes'] !== null)->count(),
+        ];
+    }
+
+    private function emptyTeacherMetrics(): array
+    {
+        return [
+            'ScheduledDays' => 0, 'AttendedDays' => 0, 'FullyPresentDays' => 0, 'TotalClasses' => 0,
+            'Present' => 0, 'Late' => 0, 'Absent' => 0, 'MissedClasses' => 0, 'Proxy' => 0,
+            'Incomplete' => 0, 'LeftEarly' => 0,
+        ];
     }
 
     private function applyPunchResult(array $result, $punches, string $actualTeacher, Carbon $classStart, Carbon $classEnd, int $graceMinute, ?string $status = null): array
