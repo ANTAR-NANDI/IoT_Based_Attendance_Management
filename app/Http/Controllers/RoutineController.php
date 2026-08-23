@@ -109,6 +109,16 @@ class RoutineController extends Controller
 
         ]);
 
+        if (!DB::table('tblDevice')
+            ->where('DeviceID', $request->DeviceID)
+            ->where('RoomID', $request->RoomID)
+            ->where('Status', 1)
+            ->exists()) {
+            return back()->withInput()->withErrors([
+                'DeviceID' => 'Select the active device assigned to the selected room.',
+            ]);
+        }
+
         $conflict = $this->hasConflict($request);
 
         if ($conflict) {
@@ -257,6 +267,16 @@ class RoutineController extends Controller
             'Status' => 'required|boolean',
 
         ]);
+
+        if (!DB::table('tblDevice')
+            ->where('DeviceID', $request->DeviceID)
+            ->where('RoomID', $request->RoomID)
+            ->where('Status', 1)
+            ->exists()) {
+            return back()->withInput()->withErrors([
+                'DeviceID' => 'Select the active device assigned to the selected room.',
+            ]);
+        }
 
         $conflict = $this->hasConflict($request, $id);
 

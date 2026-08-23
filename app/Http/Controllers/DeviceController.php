@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class DeviceController extends Controller
 {
@@ -59,11 +60,11 @@ class DeviceController extends Controller
 
             'DeviceName' => 'required|max:100',
 
-            'RoomID' => 'required|exists:tblRoom,RoomID',
+            'RoomID' => ['required', 'exists:tblRoom,RoomID', Rule::unique('tblDevice', 'RoomID')],
 
             'IPAddress' => 'required|ip',
 
-            'SerialNo' => 'nullable|max:100',
+            'SerialNo' => 'nullable|max:100|unique:tblDevice,SerialNo',
 
             'Status' => 'required|boolean',
 
@@ -132,11 +133,11 @@ class DeviceController extends Controller
 
             'DeviceName' => 'required|max:100',
 
-            'RoomID' => 'required|exists:tblRoom,RoomID',
+            'RoomID' => ['required', 'exists:tblRoom,RoomID', Rule::unique('tblDevice', 'RoomID')->ignore($id, 'DeviceID')],
 
             'IPAddress' => 'required|ip',
 
-            'SerialNo' => 'nullable|max:100',
+            'SerialNo' => ['nullable', 'max:100', Rule::unique('tblDevice', 'SerialNo')->ignore($id, 'DeviceID')],
 
             'Status' => 'required|boolean',
 

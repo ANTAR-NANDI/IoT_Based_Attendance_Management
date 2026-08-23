@@ -46,13 +46,6 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/holidays', HolidayController::class);
     Route::resource('dashboard/leave_types', LeaveTypeController::class);
     Route::resource('dashboard/leaves', LeaveController::class);
-    Route::prefix('attendance-logs')->name('attendance-logs.')->group(function () {
-
-        Route::get('/', [AttendanceLogController::class, 'index'])->name('index');
-
-        Route::post('/sync', [AttendanceLogController::class, 'sync'])->name('sync');
-    });
-
     Route::get('dashboard/reports/class-attendance', [AttendanceLogController::class, 'classAttendance'])
         ->name('reports.class-attendance');
     Route::get('/reports/class-attendance/export', [AttendanceLogController::class, 'exportPdf'])
