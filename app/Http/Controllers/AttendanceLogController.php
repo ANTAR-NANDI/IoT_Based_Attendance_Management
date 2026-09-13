@@ -140,7 +140,10 @@ class AttendanceLogController extends Controller
                 'RoutineID' => $routine->RoutineID, 'TeacherID' => $routine->TeacherID, 'RoutineDate' => $routine->RoutineDate, 'DayName' => $routine->DayName,
                 'StartTime' => $routine->StartTime, 'EndTime' => $routine->EndTime, 'SubjectName' => $routine->SubjectName,
                 'BatchName' => $routine->BatchName, 'RoomNo' => $routine->RoomNo, 'AssignedTeacher' => $routine->TeacherName,
-                'ActualTeacher' => null, 'Status' => 'Absent', 'CheckIn' => null, 'CheckOut' => null,
+                'ActualTeacher' => null,
+                // A future class has not had an opportunity to receive a punch yet.
+                'Status' => now()->lessThan($classStart) ? 'Upcoming' : 'Absent',
+                'CheckIn' => null, 'CheckOut' => null,
                 'ScheduledMinutes' => $classStart->diffInMinutes($classEnd), 'ActualMinutes' => null,
                 'LateByMinutes' => null, 'LeftEarlyByMinutes' => null,
             ];
@@ -167,6 +170,7 @@ class AttendanceLogController extends Controller
             return [
                 'TeacherName' => $teacherName, 'TotalClasses' => $rows->count(),
                 'Present' => $rows->where('Status', 'Present')->count(), 'Absent' => $rows->where('Status', 'Absent')->count(),
+                'Upcoming' => $rows->where('Status', 'Upcoming')->count(),
                 'Proxy' => $rows->where('Status', 'Proxy')->count(), 'Incomplete' => $rows->where('Status', 'Incomplete Punch')->count(),
                 'ScheduledMinutes' => $rows->sum('ScheduledMinutes'), 'ActualMinutes' => $rows->sum('ActualMinutes'),
             ];

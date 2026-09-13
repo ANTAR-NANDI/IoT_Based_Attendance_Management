@@ -45,6 +45,7 @@
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Teacher</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Classes</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Present</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase">Upcoming</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Proxy</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Absent</th>
                         <th class="px-4 py-3 text-right text-xs font-bold uppercase">Scheduled (min)</th>
@@ -57,13 +58,14 @@
                             <td class="px-4 py-3 font-semibold">{{ $row['TeacherName'] }}</td>
                             <td class="px-4 py-3 text-center">{{ $row['TotalClasses'] }}</td>
                             <td class="px-4 py-3 text-center text-green-700">{{ $row['Present'] }}</td>
+                            <td class="px-4 py-3 text-center text-indigo-700">{{ $row['Upcoming'] }}</td>
                             <td class="px-4 py-3 text-center text-amber-700">{{ $row['Proxy'] }}</td>
                             <td class="px-4 py-3 text-center text-red-700">{{ $row['Absent'] }}</td>
                             <td class="px-4 py-3 text-right">{{ $row['ScheduledMinutes'] }}</td>
                             <td class="px-4 py-3 text-right">{{ $row['ActualMinutes'] ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="7" class="py-8 text-center text-slate-500">No data for this range</td></tr>
+                        <tr><td colspan="8" class="py-8 text-center text-slate-500">No data for this range</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -129,6 +131,7 @@
                                 @php
                                     $badge = match($row['Status']) {
                                         'Present' => 'bg-green-100 text-green-700',
+                                        'Upcoming' => 'bg-indigo-100 text-indigo-700',
                                         'Proxy' => 'bg-amber-100 text-amber-700',
                                         'Incomplete Punch' => 'bg-slate-200 text-slate-600',
                                         default => 'bg-red-100 text-red-700',

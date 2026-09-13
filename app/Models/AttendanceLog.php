@@ -13,6 +13,7 @@ class AttendanceLog extends Model
     public $timestamps = true;
 
     protected $fillable = [
+        'ZKTTransactionID',
         'EmployeeID',
         'DeviceID',
         'DeviceSerialNo',

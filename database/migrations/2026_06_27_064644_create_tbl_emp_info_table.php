@@ -11,8 +11,10 @@ return new class extends Migration
         Schema::create('tblEmpInfo', function (Blueprint $table) {
             // auto_id column mimicking the legacy table's integer identity structure
             $table->id();
-            // Setting User_id as primary key to match original specifications
-            $table->string('User_id', 50)->primary();
+            // Keep the numeric `id` as the primary key (used by reporting_boss)
+            // and make the device/user identifier unique. MySQL permits only one
+            // primary key and requires an AUTO_INCREMENT column to be indexed.
+            $table->string('User_id', 50)->unique();
             $table->string('card_number', 50)->nullable();
             $table->string('strName', 150);
             $table->string('strdepartment', 100)->nullable();
