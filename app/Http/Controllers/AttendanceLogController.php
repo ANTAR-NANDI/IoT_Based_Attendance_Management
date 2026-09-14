@@ -10,8 +10,10 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceLogController extends Controller
 {
-    private const EARLY_PUNCH_BUFFER_MIN = 15;
-    private const LATE_PUNCH_BUFFER_MIN = 20;
+    // A punch before class start belongs to an earlier routine, never this one.
+    private const EARLY_PUNCH_BUFFER_MIN = 0;
+    // No multi-minute post-class overlap is allowed between routines.
+    private const LATE_PUNCH_BUFFER_MIN = 0;
 
     public function classAttendance(Request $request)
     {
@@ -133,13 +135,16 @@ class AttendanceLogController extends Controller
             $deviceLogs = ($logs->get($routine->DeviceID) ?? collect())
                 ->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded(
                     $classStart->copy()->subMinutes(self::EARLY_PUNCH_BUFFER_MIN),
-                    $classEnd->copy()->addMinutes(self::LATE_PUNCH_BUFFER_MIN)
+                    // Routine times have minute precision. Include the full
+                    // stated ending minute (e.g. 11:55:00–11:55:59).
+                    $classEnd->copy()->endOfMinute()->addMinutes(self::LATE_PUNCH_BUFFER_MIN)
                 ))->values();
 
             $result = [
                 'RoutineID' => $routine->RoutineID, 'TeacherID' => $routine->TeacherID, 'RoutineDate' => $routine->RoutineDate, 'DayName' => $routine->DayName,
                 'StartTime' => $routine->StartTime, 'EndTime' => $routine->EndTime, 'SubjectName' => $routine->SubjectName,
                 'BatchName' => $routine->BatchName, 'RoomNo' => $routine->RoomNo, 'AssignedTeacher' => $routine->TeacherName,
+                'GraceMinute' => (int) $routine->GraceMinute,
                 'ActualTeacher' => null,
                 // A future class has not had an opportunity to receive a punch yet.
                 'Status' => now()->lessThan($classStart) ? 'Upcoming' : 'Absent',
@@ -167,12 +172,17 @@ class AttendanceLogController extends Controller
         });
 
         $summary = $report->groupBy('AssignedTeacher')->map(function ($rows, $teacherName) {
+            // A proxy punch proves somebody else was in the room; it must not
+            // give attendance-time credit to the assigned teacher.
+            $nonProxyRows = $rows->where('Status', '!=', 'Proxy');
+
             return [
                 'TeacherName' => $teacherName, 'TotalClasses' => $rows->count(),
                 'Present' => $rows->where('Status', 'Present')->count(), 'Absent' => $rows->where('Status', 'Absent')->count(),
                 'Upcoming' => $rows->where('Status', 'Upcoming')->count(),
                 'Proxy' => $rows->where('Status', 'Proxy')->count(), 'Incomplete' => $rows->where('Status', 'Incomplete Punch')->count(),
-                'ScheduledMinutes' => $rows->sum('ScheduledMinutes'), 'ActualMinutes' => $rows->sum('ActualMinutes'),
+                'ScheduledMinutes' => $nonProxyRows->sum('ScheduledMinutes'),
+                'ActualMinutes' => $nonProxyRows->sum('ActualMinutes'),
             ];
         })->values();
 

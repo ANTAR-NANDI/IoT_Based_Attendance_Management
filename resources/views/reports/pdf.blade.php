@@ -97,6 +97,7 @@
                         &ndash;
                         {{ \Carbon\Carbon::parse($row['EndTime'])->format('h:i A') }}
                         <div class="muted">{{ $row['ScheduledMinutes'] }} min</div>
+                        <div class="muted">Grace: {{ $row['GraceMinute'] }} min</div>
                     </td>
                     <td>
                         @if($row['CheckIn'])
