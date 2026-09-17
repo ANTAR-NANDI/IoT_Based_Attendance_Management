@@ -17,13 +17,19 @@
             </p>
         </div>
 
-        <a href="{{ route('routines.create') }}"
-           class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-white shadow hover:bg-indigo-700">
+        <div class="flex items-center gap-3">
+            <a href="{{ route('routines.export.pdf', request()->only(['search', 'date'])) }}"
+               class="inline-flex items-center gap-2 rounded-lg bg-red-600 px-5 py-2 text-white shadow hover:bg-red-700">
+                <span>Export PDF</span>
+            </a>
+            <a href="{{ route('routines.create') }}"
+               class="inline-flex items-center gap-2 rounded-lg bg-indigo-600 px-5 py-2 text-white shadow hover:bg-indigo-700">
 
-            <span>+</span>
-            <span>Add Routine</span>
+                <span>+</span>
+                <span>Add Routine</span>
 
-        </a>
+            </a>
+        </div>
 
     </div>
 

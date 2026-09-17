@@ -17,6 +17,7 @@
 
         .badge { padding: 2px 6px; border-radius: 8px; font-size: 8px; font-weight: bold; }
         .badge-present { background-color: #dcfce7; color: #15803d; }
+        .badge-running { background-color: #e0f2fe; color: #0369a1; }
         .badge-proxy { background-color: #fef3c7; color: #b45309; }
         .badge-incomplete { background-color: #e2e8f0; color: #475569; }
         .badge-absent { background-color: #fee2e2; color: #b91c1c; }
@@ -42,6 +43,7 @@
                 <th class="text-center">Classes</th>
                 <th class="text-center">Present</th>
                 <th class="text-center">Proxy</th>
+                <th class="text-center">No Punch-out</th>
                 <th class="text-center">Absent</th>
                 <th class="text-right">Scheduled (min)</th>
                 <th class="text-right">Actual (min)</th>
@@ -54,12 +56,13 @@
                     <td class="text-center">{{ $row['TotalClasses'] }}</td>
                     <td class="text-center">{{ $row['Present'] }}</td>
                     <td class="text-center">{{ $row['Proxy'] }}</td>
+                    <td class="text-center">{{ $row['NoPunchOut'] }}</td>
                     <td class="text-center">{{ $row['Absent'] }}</td>
                     <td class="text-right">{{ $row['ScheduledMinutes'] }}</td>
                     <td class="text-right">{{ $row['ActualMinutes'] ?? '-' }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" class="text-center">No data for this range</td></tr>
+                <tr><td colspan="8" class="text-center">No data for this range</td></tr>
             @endforelse
         </tbody>
     </table>
@@ -73,6 +76,7 @@
                 <th>Room</th>
                 <th>Assigned</th>
                 <th>Actual</th>
+                <th>Proxy Teacher</th>
                 <th>Scheduled In / Out</th>
                 <th>Actual In / Out</th>
                 <th class="text-center">Status</th>
@@ -92,12 +96,14 @@
                     <td>{{ $row['RoomNo'] }}</td>
                     <td>{{ $row['AssignedTeacher'] }}</td>
                     <td>{{ $row['ActualTeacher'] ?? '-' }}</td>
+                    <td>{{ $row['ProxyTeacher'] ?? '-' }}</td>
                     <td>
                         {{ \Carbon\Carbon::parse($row['StartTime'])->format('h:i A') }}
                         &ndash;
                         {{ \Carbon\Carbon::parse($row['EndTime'])->format('h:i A') }}
                         <div class="muted">{{ $row['ScheduledMinutes'] }} min</div>
-                        <div class="muted">Grace: {{ $row['GraceMinute'] }} min</div>
+                        <div class="muted">Entry grace: -{{ $row['GraceWindows']['entry_early_minutes'] }} / +{{ $row['GraceWindows']['entry_late_minutes'] }} min</div>
+                        <div class="muted">Exit grace: -{{ $row['GraceWindows']['exit_early_minutes'] }} / +{{ $row['GraceWindows']['exit_late_minutes'] }} min</div>
                     </td>
                     <td>
                         @if($row['CheckIn'])
@@ -119,6 +125,7 @@
                         @php
                             $badgeClass = match($row['Status']) {
                                 'Present' => 'badge-present',
+                                'Running' => 'badge-running',
                                 'Proxy' => 'badge-proxy',
                                 'Incomplete Punch' => 'badge-incomplete',
                                 default => 'badge-absent',
@@ -128,7 +135,7 @@
                     </td>
                 </tr>
             @empty
-                <tr><td colspan="8" class="text-center">No classes scheduled in this range</td></tr>
+                <tr><td colspan="9" class="text-center">No classes scheduled in this range</td></tr>
             @endforelse
         </tbody>
     </table>

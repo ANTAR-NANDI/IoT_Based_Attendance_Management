@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Exception;
@@ -13,6 +14,29 @@ class RoutineController extends Controller
      * Display Routine List
      */
     public function index(Request $request)
+    {
+        $routines = $this->routineQuery($request)
+            ->orderByDesc('ro.RoutineDate')
+            ->orderBy('ro.StartTime')
+            ->paginate(20);
+
+        return view('routines.index', compact('routines'));
+    }
+
+    /** Download the current filtered routine list as a print-ready PDF. */
+    public function exportPdf(Request $request)
+    {
+        $routines = $this->routineQuery($request)
+            ->orderByDesc('ro.RoutineDate')
+            ->orderBy('ro.StartTime')
+            ->get();
+
+        return Pdf::loadView('routines.pdf', compact('routines'))
+            ->setPaper('a4', 'landscape')
+            ->download('routine-'.now()->format('Y-m-d-His').'.pdf');
+    }
+
+    private function routineQuery(Request $request)
     {
         $query = DB::table('tblRoutine as ro')
             ->join('tblTeacher as t', 'ro.TeacherID', '=', 't.TeacherID')
@@ -46,12 +70,7 @@ class RoutineController extends Controller
             $query->whereDate('ro.RoutineDate', $request->date);
         }
 
-        $routines = $query
-            ->orderByDesc('ro.RoutineDate')
-            ->orderBy('ro.StartTime')
-            ->paginate(20);
-
-        return view('routines.index', compact('routines'));
+        return $query;
     }
 
     /**
@@ -84,6 +103,7 @@ class RoutineController extends Controller
             'RoutineDate' => 'required|date',
 
             'TeacherID' => 'required|exists:tblTeacher,TeacherID',
+            'ProxyTeacherID' => 'nullable|exists:tblTeacher,TeacherID|different:TeacherID',
 
             'SubjectID' => 'required|exists:tblSubject,SubjectID',
 
@@ -96,8 +116,6 @@ class RoutineController extends Controller
             'StartTime' => 'required|date_format:H:i',
 
             'EndTime' => 'required|date_format:H:i|after:StartTime',
-
-            'GraceMinute' => 'nullable|integer|min:0',
 
             'DayName' => 'required|string|max:20',
 
@@ -134,6 +152,7 @@ class RoutineController extends Controller
                 'RoutineDate' => $request->RoutineDate,
 
                 'TeacherID' => $request->TeacherID,
+                'ProxyTeacherID' => $request->ProxyTeacherID,
 
                 'SubjectID' => $request->SubjectID,
 
@@ -147,7 +166,7 @@ class RoutineController extends Controller
 
                 'EndTime' => $request->EndTime,
 
-                'GraceMinute' => $request->GraceMinute ?? 0,
+                'GraceMinute' => 0,
 
                 'DayName' => $request->DayName,
 
@@ -243,6 +262,7 @@ class RoutineController extends Controller
             'RoutineDate' => 'required|date',
 
             'TeacherID' => 'required|exists:tblTeacher,TeacherID',
+            'ProxyTeacherID' => 'nullable|exists:tblTeacher,TeacherID|different:TeacherID',
 
             'SubjectID' => 'required|exists:tblSubject,SubjectID',
 
@@ -255,8 +275,6 @@ class RoutineController extends Controller
             'StartTime' => 'required|date_format:H:i',
 
             'EndTime' => 'required|date_format:H:i|after:StartTime',
-
-            'GraceMinute' => 'nullable|integer|min:0',
 
             'DayName' => 'required|string|max:20',
 
@@ -295,6 +313,7 @@ class RoutineController extends Controller
                     'RoutineDate' => $request->RoutineDate,
 
                     'TeacherID' => $request->TeacherID,
+                    'ProxyTeacherID' => $request->ProxyTeacherID,
 
                     'SubjectID' => $request->SubjectID,
 
@@ -308,7 +327,7 @@ class RoutineController extends Controller
 
                     'EndTime' => $request->EndTime,
 
-                    'GraceMinute' => $request->GraceMinute ?? 0,
+                    'GraceMinute' => 0,
 
                     'DayName' => $request->DayName,
 

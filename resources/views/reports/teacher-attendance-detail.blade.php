@@ -41,6 +41,7 @@
                         <th class="px-4 py-3 text-left">Date / class</th>
                         <th class="px-4 py-3 text-left">Subject / batch</th>
                         <th class="px-4 py-3 text-left">Room</th>
+                        <th class="px-4 py-3 text-left">Proxy teacher</th>
                         <th class="px-4 py-3 text-left">Check-in / out</th>
                         <th class="px-4 py-3 text-center">Late</th>
                         <th class="px-4 py-3 text-center">Status</th>
@@ -49,15 +50,16 @@
                 <tbody class="divide-y divide-slate-200">
                     @forelse($report as $row)
                         <tr class="hover:bg-slate-50">
-                            <td class="px-4 py-3"><div class="font-medium">{{ \Carbon\Carbon::parse($row['RoutineDate'])->format('d M Y') }}</div><div class="text-xs text-slate-500">{{ $row['StartTime'] }} - {{ $row['EndTime'] }}</div></td>
+                            <td class="px-4 py-3"><div class="font-medium">{{ \Carbon\Carbon::parse($row['RoutineDate'])->format('d M Y') }}</div><div class="text-xs text-slate-500">{{ \Carbon\Carbon::parse($row['StartTime'])->format('h:i A') }} - {{ \Carbon\Carbon::parse($row['EndTime'])->format('h:i A') }}</div></td>
                             <td class="px-4 py-3"><div>{{ $row['SubjectName'] }}</div><div class="text-xs text-slate-500">{{ $row['BatchName'] }}</div></td>
                             <td class="px-4 py-3">{{ $row['RoomNo'] }}</td>
+                            <td class="px-4 py-3 text-indigo-700">{{ $row['ProxyTeacher'] ?? '—' }}</td>
                             <td class="px-4 py-3">{{ $row['CheckIn'] ?? '—' }} - {{ $row['CheckOut'] ?? '—' }}</td>
                             <td class="px-4 py-3 text-center">{{ $row['LateByMinutes'] ? $row['LateByMinutes'].' min' : '—' }}</td>
                             <td class="px-4 py-3 text-center"><span class="rounded-full px-3 py-1 text-xs font-semibold {{ match($row['Status']) { 'Present' => 'bg-green-100 text-green-700', 'Proxy' => 'bg-amber-100 text-amber-700', 'Incomplete Punch' => 'bg-slate-200 text-slate-700', default => 'bg-red-100 text-red-700' } }}">{{ $row['Status'] }}</span></td>
                         </tr>
                     @empty
-                        <tr><td colspan="6" class="px-4 py-10 text-center text-slate-500">No classes scheduled for this period.</td></tr>
+                        <tr><td colspan="7" class="px-4 py-10 text-center text-slate-500">No classes scheduled for this period.</td></tr>
                     @endforelse
                 </tbody>
             </table>

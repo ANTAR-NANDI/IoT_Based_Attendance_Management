@@ -10,11 +10,6 @@ use Illuminate\Support\Facades\DB;
 
 class AttendanceLogController extends Controller
 {
-    // A punch before class start belongs to an earlier routine, never this one.
-    private const EARLY_PUNCH_BUFFER_MIN = 0;
-    // No multi-minute post-class overlap is allowed between routines.
-    private const LATE_PUNCH_BUFFER_MIN = 0;
-
     public function classAttendance(Request $request)
     {
         [$report, $summary, $fromDate, $toDate] = $this->buildReport($request);
@@ -97,13 +92,15 @@ class AttendanceLogController extends Controller
 
         $fromDate = $request->input('from_date', now()->toDateString());
         $toDate = $request->input('to_date', $fromDate);
+        $grace = $this->graceSettings();
 
         $routineQuery = DB::table('tblRoutine as ro')
             ->join('tblTeacher as t', 'ro.TeacherID', '=', 't.TeacherID')
+            ->leftJoin('tblTeacher as pt', 'ro.ProxyTeacherID', '=', 'pt.TeacherID')
             ->join('tblSubject as s', 'ro.SubjectID', '=', 's.SubjectID')
             ->join('tblBatch as b', 'ro.BatchID', '=', 'b.BatchID')
             ->join('tblRoom as r', 'ro.RoomID', '=', 'r.RoomID')
-            ->select('ro.*', 't.TeacherName', 't.ZKUserID', 's.SubjectName', 'b.BatchName', 'r.RoomNo')
+            ->select('ro.*', 't.TeacherName', 't.ZKUserID', 'pt.TeacherName as ProxyTeacherName', 'pt.ZKUserID as ProxyTeacherZKUserID', 's.SubjectName', 'b.BatchName', 'r.RoomNo')
             ->whereBetween('ro.RoutineDate', [$fromDate, $toDate])
             ->where('ro.Status', 1);
 
@@ -122,32 +119,37 @@ class AttendanceLogController extends Controller
         $logs = DB::table('tblAttendanceLog')
             ->whereIn('DeviceID', $routines->pluck('DeviceID')->unique())
             ->whereBetween('PunchTime', [
-                Carbon::parse($fromDate)->subMinutes(self::EARLY_PUNCH_BUFFER_MIN),
-                Carbon::parse($toDate)->endOfDay()->addMinutes(self::LATE_PUNCH_BUFFER_MIN),
+                Carbon::parse($fromDate)->subMinutes($grace['entry_early_minutes']),
+                Carbon::parse($toDate)->endOfDay()->addMinutes($grace['exit_late_minutes']),
             ])
             ->orderBy('PunchTime')->get()->groupBy('DeviceID');
 
-        $teacherNamesByZkUserId = DB::table('tblTeacher')->whereNotNull('ZKUserID')->pluck('TeacherName', 'ZKUserID');
-
-        $report = $routines->map(function ($routine) use ($logs, $teacherNamesByZkUserId) {
+        $report = $routines->map(function ($routine) use ($logs, $grace) {
             $classStart = Carbon::parse("{$routine->RoutineDate} {$routine->StartTime}");
             $classEnd = Carbon::parse("{$routine->RoutineDate} {$routine->EndTime}");
+            $entryOpen = $classStart->copy()->subMinutes($grace['entry_early_minutes']);
+            // Routine and grace values have minute precision, so include the
+            // complete final grace minute (for example, 3:55:00-3:55:59).
+            $entryClose = $classStart->copy()->addMinutes($grace['entry_late_minutes'])->endOfMinute();
+            $exitOpen = $classEnd->copy()->subMinutes($grace['exit_early_minutes']);
+            $exitClose = $classEnd->copy()->endOfMinute()->addMinutes($grace['exit_late_minutes']);
             $deviceLogs = ($logs->get($routine->DeviceID) ?? collect())
                 ->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded(
-                    $classStart->copy()->subMinutes(self::EARLY_PUNCH_BUFFER_MIN),
-                    // Routine times have minute precision. Include the full
-                    // stated ending minute (e.g. 11:55:00–11:55:59).
-                    $classEnd->copy()->endOfMinute()->addMinutes(self::LATE_PUNCH_BUFFER_MIN)
+                    $entryOpen, $exitClose
                 ))->values();
 
             $result = [
                 'RoutineID' => $routine->RoutineID, 'TeacherID' => $routine->TeacherID, 'RoutineDate' => $routine->RoutineDate, 'DayName' => $routine->DayName,
                 'StartTime' => $routine->StartTime, 'EndTime' => $routine->EndTime, 'SubjectName' => $routine->SubjectName,
                 'BatchName' => $routine->BatchName, 'RoomNo' => $routine->RoomNo, 'AssignedTeacher' => $routine->TeacherName,
-                'GraceMinute' => (int) $routine->GraceMinute,
+                'GraceWindows' => $grace,
                 'ActualTeacher' => null,
-                // A future class has not had an opportunity to receive a punch yet.
-                'Status' => now()->lessThan($classStart) ? 'Upcoming' : 'Absent',
+                'ProxyTeacher' => $routine->ProxyTeacherName,
+                // A scheduled class is Upcoming before its start, Running
+                // during entry grace, and Absent only after grace expires.
+                'Status' => now()->lessThan($classStart)
+                    ? 'Upcoming'
+                    : (now()->lessThanOrEqualTo($entryClose) ? 'Running' : 'Absent'),
                 'CheckIn' => null, 'CheckOut' => null,
                 'ScheduledMinutes' => $classStart->diffInMinutes($classEnd), 'ActualMinutes' => null,
                 'LateByMinutes' => null, 'LeftEarlyByMinutes' => null,
@@ -160,29 +162,66 @@ class AttendanceLogController extends Controller
             // EmployeeID from the device is the biometric enrollment number, not tblTeacher.TeacherID.
             $assignedLogs = $routine->ZKUserID === null ? collect() : $deviceLogs
                 ->filter(fn ($log) => (string) $log->EmployeeID === (string) $routine->ZKUserID)->values();
+            $entryLogs = $assignedLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $entryClose));
+            $exitLogs = $assignedLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($exitOpen, $exitClose));
 
-            if ($assignedLogs->isNotEmpty()) {
-                return $this->applyPunchResult($result, $assignedLogs, $routine->TeacherName, $classStart, $classEnd, (int) $routine->GraceMinute);
+            if ($entryLogs->isNotEmpty()) {
+                $checkInLog = $entryLogs->first();
+                $checkOutLog = $exitLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->greaterThan(Carbon::parse($checkInLog->PunchTime)))->last();
+                return $this->applyPunchResult($result, $checkInLog, $checkOutLog, $routine->TeacherName, $classStart, $classEnd);
             }
 
-            $actualIds = $deviceLogs->pluck('EmployeeID')->unique()->values();
-            $actualNames = $actualIds->map(fn ($id) => $teacherNamesByZkUserId->get($id))->filter()->implode(', ');
+            // Preserve a late scan in the report, but do not count it as a
+            // valid attendance entry once the global entry grace has expired.
+            $lateEntryLogs = $assignedLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->greaterThan($entryClose)
+                && Carbon::parse($log->PunchTime)->lessThanOrEqualTo($classEnd->copy()->endOfMinute()));
 
-            return $this->applyPunchResult($result, $deviceLogs, $actualNames ?: 'Unknown ZKT user: '.$actualIds->implode(', '), $classStart, $classEnd, (int) $routine->GraceMinute, 'Proxy');
+            if ($lateEntryLogs->isNotEmpty()) {
+                $checkInLog = $lateEntryLogs->first();
+                $checkOutLog = $exitLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->greaterThan(Carbon::parse($checkInLog->PunchTime)))->last();
+
+                return $this->applyPunchResult($result, $checkInLog, $checkOutLog, $routine->TeacherName, $classStart, $classEnd, 'Late - Absent');
+            }
+
+            // A proxy must be selected explicitly in the routine. Random
+            // device punches never create a proxy attendance.
+            $proxyEntryLogs = $routine->ProxyTeacherZKUserID === null ? collect() : $deviceLogs
+                ->filter(fn ($log) => (string) $log->EmployeeID === (string) $routine->ProxyTeacherZKUserID)
+                ->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $entryClose))
+                ->values();
+
+            if ($proxyEntryLogs->isEmpty()) {
+                return $result;
+            }
+
+            $proxyCheckInLog = $proxyEntryLogs->first();
+            $proxyCheckOutLog = $deviceLogs
+                ->filter(fn ($log) => (string) $log->EmployeeID === (string) $proxyCheckInLog->EmployeeID)
+                ->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($exitOpen, $exitClose))
+                ->filter(fn ($log) => Carbon::parse($log->PunchTime)->greaterThan(Carbon::parse($proxyCheckInLog->PunchTime)))
+                ->last();
+
+            return $this->applyPunchResult($result, $proxyCheckInLog, $proxyCheckOutLog, $routine->ProxyTeacherName, $classStart, $classEnd, 'Proxy');
         });
 
         $summary = $report->groupBy('AssignedTeacher')->map(function ($rows, $teacherName) {
             // A proxy punch proves somebody else was in the room; it must not
             // give attendance-time credit to the assigned teacher.
-            $nonProxyRows = $rows->where('Status', '!=', 'Proxy');
+            $creditedRows = $rows->whereNotIn('Status', ['Proxy', 'Late - Absent']);
+            $noPunchOutRows = $rows->filter(fn ($row) => $row['CheckIn'] !== null && $row['CheckOut'] === null);
+            $absentRows = $rows
+                ->whereIn('Status', ['Absent', 'Late - Absent'])
+                ->filter(fn ($row) => !($row['CheckIn'] !== null && $row['CheckOut'] === null));
 
             return [
                 'TeacherName' => $teacherName, 'TotalClasses' => $rows->count(),
-                'Present' => $rows->where('Status', 'Present')->count(), 'Absent' => $rows->where('Status', 'Absent')->count(),
+                'Present' => $rows->where('Status', 'Present')->count(),
+                'Absent' => $absentRows->count(),
                 'Upcoming' => $rows->where('Status', 'Upcoming')->count(),
                 'Proxy' => $rows->where('Status', 'Proxy')->count(), 'Incomplete' => $rows->where('Status', 'Incomplete Punch')->count(),
-                'ScheduledMinutes' => $nonProxyRows->sum('ScheduledMinutes'),
-                'ActualMinutes' => $nonProxyRows->sum('ActualMinutes'),
+                'NoPunchOut' => $noPunchOutRows->count(),
+                'ScheduledMinutes' => $creditedRows->sum('ScheduledMinutes'),
+                'ActualMinutes' => $creditedRows->sum('ActualMinutes'),
             ];
         })->values();
 
@@ -202,8 +241,8 @@ class AttendanceLogController extends Controller
             'TotalClasses' => $rows->count(),
             'Present' => $rows->where('Status', 'Present')->count(),
             'Late' => $rows->filter(fn ($row) => $row['LateByMinutes'] !== null)->count(),
-            'Absent' => $rows->where('Status', 'Absent')->count(),
-            'MissedClasses' => $rows->where('Status', 'Absent')->count(),
+            'Absent' => $rows->whereIn('Status', ['Absent', 'Late - Absent'])->count(),
+            'MissedClasses' => $rows->whereIn('Status', ['Absent', 'Late - Absent'])->count(),
             'Proxy' => $rows->where('Status', 'Proxy')->count(),
             'Incomplete' => $rows->where('Status', 'Incomplete Punch')->count(),
             'LeftEarly' => $rows->filter(fn ($row) => $row['LeftEarlyByMinutes'] !== null)->count(),
@@ -219,22 +258,34 @@ class AttendanceLogController extends Controller
         ];
     }
 
-    private function applyPunchResult(array $result, $punches, string $actualTeacher, Carbon $classStart, Carbon $classEnd, int $graceMinute, ?string $status = null): array
+    private function graceSettings(): array
     {
-        $checkIn = Carbon::parse($punches->first()->PunchTime);
-        $checkOut = $punches->count() >= 2 ? Carbon::parse($punches->last()->PunchTime) : null;
+        $settings = DB::table('tblAttendanceSetting')->where('id', 1)->first();
+
+        return [
+            'entry_early_minutes' => $settings?->EntryEarlyMinutes ?? config('attendance.entry_early_minutes'),
+            'entry_late_minutes' => $settings?->EntryLateMinutes ?? config('attendance.entry_late_minutes'),
+            'exit_early_minutes' => $settings?->ExitEarlyMinutes ?? config('attendance.exit_early_minutes'),
+            'exit_late_minutes' => $settings?->ExitLateMinutes ?? config('attendance.exit_late_minutes'),
+        ];
+    }
+
+    private function applyPunchResult(array $result, $checkInLog, $checkOutLog, string $actualTeacher, Carbon $classStart, Carbon $classEnd, ?string $status = null): array
+    {
+        $checkIn = Carbon::parse($checkInLog->PunchTime);
+        $checkOut = $checkOutLog ? Carbon::parse($checkOutLog->PunchTime) : null;
 
         $result['ActualTeacher'] = $actualTeacher;
         $result['Status'] = $status ?? ($checkOut ? 'Present' : 'Incomplete Punch');
         $result['CheckIn'] = $checkIn->format('h:i A');
         $result['CheckOut'] = $checkOut?->format('h:i A');
-        $result['ActualMinutes'] = $checkOut ? $checkIn->diffInMinutes($checkOut) : null;
+        $result['ActualMinutes'] = $checkOut ? (int) round($checkIn->diffInMinutes($checkOut)) : null;
 
-        if ($status === null && $checkIn->greaterThan($classStart->copy()->addMinutes($graceMinute))) {
-            $result['LateByMinutes'] = $classStart->copy()->addMinutes($graceMinute)->diffInMinutes($checkIn);
+        if ($checkIn->greaterThan($classStart)) {
+            $result['LateByMinutes'] = (int) round($classStart->diffInMinutes($checkIn));
         }
         if ($checkOut && $checkOut->lessThan($classEnd)) {
-            $result['LeftEarlyByMinutes'] = $checkOut->diffInMinutes($classEnd);
+            $result['LeftEarlyByMinutes'] = (int) round($checkOut->diffInMinutes($classEnd));
         }
 
         return $result;

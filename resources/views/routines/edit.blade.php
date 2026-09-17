@@ -128,6 +128,19 @@
 
                     </div>
 
+                    <!-- Planned Proxy Teacher -->
+                    <div>
+                        <label class="block font-semibold mb-2">Proxy Teacher <span class="font-normal text-slate-500">(optional)</span></label>
+                        <select name="ProxyTeacherID" class="w-full border rounded-lg px-4 py-2">
+                            <option value="">No planned proxy</option>
+                            @foreach($teachers as $teacher)
+                                <option value="{{ $teacher->TeacherID }}" {{ old('ProxyTeacherID', $routine->ProxyTeacherID) == $teacher->TeacherID ? 'selected' : '' }}>
+                                    {{ $teacher->TeacherName }}
+                                </option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <!-- Subject -->
                     <div>
 
@@ -315,22 +328,6 @@
                             name="EndTime"
                             value="{{ old('EndTime', $routine->EndTime) }}"
                             required
-                            class="w-full border rounded-lg px-4 py-2">
-
-                    </div>
-
-                    <!-- Grace Minute -->
-                    <div>
-
-                        <label class="block font-semibold mb-2">
-                            Grace Minutes
-                        </label>
-
-                        <input
-                            type="number"
-                            name="GraceMinute"
-                            value="{{ old('GraceMinute', $routine->GraceMinute) }}"
-                            min="0"
                             class="w-full border rounded-lg px-4 py-2">
 
                     </div>

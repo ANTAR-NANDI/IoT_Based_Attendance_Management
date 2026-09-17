@@ -47,6 +47,7 @@
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Present</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Upcoming</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Proxy</th>
+                        <th class="px-4 py-3 text-center text-xs font-bold uppercase">No Punch-out</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Absent</th>
                         <th class="px-4 py-3 text-right text-xs font-bold uppercase">Scheduled (min)</th>
                         <th class="px-4 py-3 text-right text-xs font-bold uppercase">Actual (min)</th>
@@ -60,12 +61,13 @@
                             <td class="px-4 py-3 text-center text-green-700">{{ $row['Present'] }}</td>
                             <td class="px-4 py-3 text-center text-indigo-700">{{ $row['Upcoming'] }}</td>
                             <td class="px-4 py-3 text-center text-amber-700">{{ $row['Proxy'] }}</td>
+                            <td class="px-4 py-3 text-center text-slate-700">{{ $row['NoPunchOut'] }}</td>
                             <td class="px-4 py-3 text-center text-red-700">{{ $row['Absent'] }}</td>
                             <td class="px-4 py-3 text-right">{{ $row['ScheduledMinutes'] }}</td>
                             <td class="px-4 py-3 text-right">{{ $row['ActualMinutes'] ?? '—' }}</td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="py-8 text-center text-slate-500">No data for this range</td></tr>
+                        <tr><td colspan="9" class="py-8 text-center text-slate-500">No data for this range</td></tr>
                     @endforelse
                 </tbody>
             </table>
@@ -84,6 +86,7 @@
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Room</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Assigned</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Actual</th>
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase">Proxy Teacher</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Scheduled In / Out</th>
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">Actual In / Out</th>
                         <th class="px-4 py-3 text-center text-xs font-bold uppercase">Status</th>
@@ -105,12 +108,14 @@
                             <td class="px-4 py-3 {{ $row['Status'] == 'Proxy' ? 'text-amber-700 font-semibold' : '' }}">
                                 {{ $row['ActualTeacher'] ?? '—' }}
                             </td>
+                            <td class="px-4 py-3 text-sm text-indigo-700">{{ $row['ProxyTeacher'] ?? '—' }}</td>
                             <td class="px-4 py-3 text-xs whitespace-nowrap">
                                 {{ \Carbon\Carbon::parse($row['StartTime'])->format('h:i A') }}
                                 &ndash;
                                 {{ \Carbon\Carbon::parse($row['EndTime'])->format('h:i A') }}
                                 <div class="text-slate-400">{{ $row['ScheduledMinutes'] }} min</div>
-                                <div class="text-indigo-600">Grace: {{ $row['GraceMinute'] }} min</div>
+                                <div class="text-indigo-600">Entry grace: -{{ $row['GraceWindows']['entry_early_minutes'] }} / +{{ $row['GraceWindows']['entry_late_minutes'] }} min</div>
+                                <div class="text-indigo-600">Exit grace: -{{ $row['GraceWindows']['exit_early_minutes'] }} / +{{ $row['GraceWindows']['exit_late_minutes'] }} min</div>
                             </td>
                             <td class="px-4 py-3 text-xs whitespace-nowrap">
                                 @if($row['CheckIn'])
@@ -133,6 +138,7 @@
                                     $badge = match($row['Status']) {
                                         'Present' => 'bg-green-100 text-green-700',
                                         'Upcoming' => 'bg-indigo-100 text-indigo-700',
+                                        'Running' => 'bg-sky-100 text-sky-700',
                                         'Proxy' => 'bg-amber-100 text-amber-700',
                                         'Incomplete Punch' => 'bg-slate-200 text-slate-600',
                                         default => 'bg-red-100 text-red-700',
@@ -144,7 +150,7 @@
                             </td>
                         </tr>
                     @empty
-                        <tr><td colspan="8" class="py-10 text-center text-slate-500">No classes scheduled in this range</td></tr>
+                        <tr><td colspan="9" class="py-10 text-center text-slate-500">No classes scheduled in this range</td></tr>
                     @endforelse
                 </tbody>
             </table>

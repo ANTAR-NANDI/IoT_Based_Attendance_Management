@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AttendanceLogController;
+use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\Auth\LoginSessionController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\DashboardController;
@@ -33,6 +34,8 @@ Route::middleware('auth')->group(function () {
 
     // Employee Entry form sits cleanly on the primary landing path
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/dashboard/attendance-settings', [AttendanceSettingController::class, 'edit'])->name('attendance-settings.edit');
+    Route::put('/dashboard/attendance-settings', [AttendanceSettingController::class, 'update'])->name('attendance-settings.update');
 
     Route::resource('dashboard/departments', DepartmentController::class);
     Route::resource('dashboard/designations', DesignationController::class);
@@ -41,6 +44,7 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/batches', BatchController::class);
     Route::resource('dashboard/rooms', RoomController::class);
     Route::resource('dashboard/devices', DeviceController::class);
+    Route::get('dashboard/routines/export/pdf', [RoutineController::class, 'exportPdf'])->name('routines.export.pdf');
     Route::resource('dashboard/routines', RoutineController::class);
     Route::resource('dashboard/shifts', ShiftController::class);
     Route::resource('dashboard/holidays', HolidayController::class);
