@@ -129,11 +129,10 @@ class RoutineController extends Controller
 
         if (!DB::table('tblDevice')
             ->where('DeviceID', $request->DeviceID)
-            ->where('RoomID', $request->RoomID)
             ->where('Status', 1)
             ->exists()) {
             return back()->withInput()->withErrors([
-                'DeviceID' => 'Select the active device assigned to the selected room.',
+                'DeviceID' => 'Select an active device.',
             ]);
         }
 
@@ -288,11 +287,10 @@ class RoutineController extends Controller
 
         if (!DB::table('tblDevice')
             ->where('DeviceID', $request->DeviceID)
-            ->where('RoomID', $request->RoomID)
             ->where('Status', 1)
             ->exists()) {
             return back()->withInput()->withErrors([
-                'DeviceID' => 'Select the active device assigned to the selected room.',
+                'DeviceID' => 'Select an active device.',
             ]);
         }
 

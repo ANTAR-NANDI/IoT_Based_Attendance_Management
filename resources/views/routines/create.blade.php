@@ -256,8 +256,12 @@
                     <div>
 
                         <label class="block font-semibold mb-2">
-                            Device
+                            Attendance Device
                         </label>
+
+                        <p class="mb-2 text-xs text-slate-500">
+                            The same device may be used for another room at a different, non-overlapping time.
+                        </p>
 
                         <select
                             name="DeviceID"
