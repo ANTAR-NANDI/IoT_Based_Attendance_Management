@@ -14,12 +14,7 @@ class DeviceController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('tblDevice as d')
-            ->join('tblRoom as r', 'd.RoomID', '=', 'r.RoomID')
-            ->select(
-                'd.*',
-                'r.RoomNo'
-            );
+        $query = DB::table('tblDevice as d')->select('d.*');
 
         if ($request->filled('search')) {
 
@@ -27,8 +22,7 @@ class DeviceController extends Controller
 
                 $q->where('d.DeviceName', 'like', "%{$request->search}%")
                     ->orWhere('d.IPAddress', 'like', "%{$request->search}%")
-                    ->orWhere('d.SerialNo', 'like', "%{$request->search}%")
-                    ->orWhere('r.RoomNo', 'like', "%{$request->search}%");
+                    ->orWhere('d.SerialNo', 'like', "%{$request->search}%");
             });
         }
 
@@ -44,11 +38,7 @@ class DeviceController extends Controller
      */
     public function create()
     {
-        $rooms = DB::table('tblRoom')
-            ->orderBy('RoomNo')
-            ->get();
-
-        return view('devices.create', compact('rooms'));
+        return view('devices.create');
     }
 
     /**
@@ -59,8 +49,6 @@ class DeviceController extends Controller
         $request->validate([
 
             'DeviceName' => 'required|max:100',
-
-            'RoomID' => ['required', 'exists:tblRoom,RoomID', Rule::unique('tblDevice', 'RoomID')],
 
             'IPAddress' => 'required|ip',
 
@@ -76,7 +64,7 @@ class DeviceController extends Controller
 
                 'DeviceName' => $request->DeviceName,
 
-                'RoomID' => $request->RoomID,
+                'RoomID' => null,
 
                 'IPAddress' => $request->IPAddress,
 
@@ -114,14 +102,7 @@ class DeviceController extends Controller
             abort(404);
         }
 
-        $rooms = DB::table('tblRoom')
-            ->orderBy('RoomNo')
-            ->get();
-
-        return view('devices.edit', compact(
-            'device',
-            'rooms'
-        ));
+        return view('devices.edit', compact('device'));
     }
 
     /**
@@ -132,8 +113,6 @@ class DeviceController extends Controller
         $request->validate([
 
             'DeviceName' => 'required|max:100',
-
-            'RoomID' => ['required', 'exists:tblRoom,RoomID', Rule::unique('tblDevice', 'RoomID')->ignore($id, 'DeviceID')],
 
             'IPAddress' => 'required|ip',
 
@@ -151,7 +130,7 @@ class DeviceController extends Controller
 
                     'DeviceName' => $request->DeviceName,
 
-                    'RoomID' => $request->RoomID,
+                    'RoomID' => null,
 
                     'IPAddress' => $request->IPAddress,
 

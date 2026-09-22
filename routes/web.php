@@ -1,62 +1,42 @@
 <?php
 
-use App\Http\Controllers\AttendanceLogController;
 use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\Auth\LoginSessionController;
-use App\Http\Controllers\BatchController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
-use App\Http\Controllers\DeviceController;
-use App\Http\Controllers\HolidayController;
-use App\Http\Controllers\LeaveController;
-use App\Http\Controllers\LeaveTypeController;
-use App\Http\Controllers\RoomController;
-use App\Http\Controllers\RoutineController;
-use App\Http\Controllers\ShiftController;
-use App\Http\Controllers\SubjectController;
-use App\Http\Controllers\TeacherController;
+use App\Http\Controllers\RosterAssignmentController;
+use App\Http\Controllers\RosterLocationController;
+use App\Http\Controllers\RosterPersonController;
+use App\Http\Controllers\RosterReportController;
+use App\Http\Controllers\RosterRotationController;
+use App\Http\Controllers\RosterSettingController;
+use App\Http\Controllers\RosterShiftController;
 use Illuminate\Support\Facades\Route;
 
-// Redirect clean base domain index inquiries straight to login view
-Route::get('/', function () {
-    return redirect()->route('login');
-});
+Route::get('/', fn () => redirect()->route('login'));
 
-// Structural Routing Definitions For Anonymous Guest Sessions
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginSessionController::class, 'create'])->name('login');
     Route::post('/login', [LoginSessionController::class, 'store'])->name('login.post');
 });
 
-// Guarded Enterprise Workspace Infrastructure (Requires Active Authentication State)
 Route::middleware('auth')->group(function () {
-
-    // Employee Entry form sits cleanly on the primary landing path
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/attendance-settings', [AttendanceSettingController::class, 'edit'])->name('attendance-settings.edit');
     Route::put('/dashboard/attendance-settings', [AttendanceSettingController::class, 'update'])->name('attendance-settings.update');
-
+    Route::resource('dashboard/devices', DeviceController::class)->except('show');
     Route::resource('dashboard/departments', DepartmentController::class);
     Route::resource('dashboard/designations', DesignationController::class);
-    Route::resource('dashboard/teachers', TeacherController::class);
-    Route::resource('dashboard/subjects', SubjectController::class);
-    Route::resource('dashboard/batches', BatchController::class);
-    Route::resource('dashboard/rooms', RoomController::class);
-    Route::resource('dashboard/devices', DeviceController::class);
-    Route::get('dashboard/routines/export/pdf', [RoutineController::class, 'exportPdf'])->name('routines.export.pdf');
-    Route::resource('dashboard/routines', RoutineController::class);
-    Route::resource('dashboard/shifts', ShiftController::class);
-    Route::resource('dashboard/holidays', HolidayController::class);
-    Route::resource('dashboard/leave_types', LeaveTypeController::class);
-    Route::resource('dashboard/leaves', LeaveController::class);
-    Route::get('dashboard/reports/class-attendance', [AttendanceLogController::class, 'classAttendance'])
-        ->name('reports.class-attendance');
-    Route::get('/reports/class-attendance/export', [AttendanceLogController::class, 'exportPdf'])
-        ->name('reports.class-attendance.export');
-    Route::get('/reports/teacher-attendance', [AttendanceLogController::class, 'teacherAttendance'])
-        ->name('reports.teacher-attendance');
-    Route::get('/reports/teacher-attendance/{teacherId}', [AttendanceLogController::class, 'teacherAttendanceDetail'])
-        ->name('reports.teacher-attendance.detail');
+    Route::resource('dashboard/roster/people', RosterPersonController::class)->except('show')->names('roster.people');
+    Route::resource('dashboard/roster/locations', RosterLocationController::class)->except('show', 'destroy')->names('roster.locations');
+    Route::resource('dashboard/roster/shifts', RosterShiftController::class)->except('show', 'destroy')->names('roster.shifts');
+    Route::get('dashboard/roster/settings', [RosterSettingController::class, 'edit'])->name('roster.settings.edit');
+    Route::put('dashboard/roster/settings', [RosterSettingController::class, 'update'])->name('roster.settings.update');
+    Route::resource('dashboard/roster/assignments', RosterAssignmentController::class)->except('show')->names('roster.assignments');
+    Route::get('dashboard/roster/security-rotation', [RosterRotationController::class, 'create'])->name('roster.rotation.create');
+    Route::post('dashboard/roster/security-rotation', [RosterRotationController::class, 'store'])->name('roster.rotation.store');
+    Route::get('dashboard/reports/roster-attendance', [RosterReportController::class, 'index'])->name('reports.roster-attendance');
     Route::post('/logout', [LoginSessionController::class, 'destroy'])->name('logout');
 });

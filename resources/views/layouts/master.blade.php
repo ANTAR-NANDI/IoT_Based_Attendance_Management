@@ -52,6 +52,9 @@
             outline: 2px solid rgb(37 99 235 / 0.2);
             outline-offset: 1px;
         }
+
+        /* Roster forms use the full available dashboard width. */
+        .max-w-2xl, .max-w-3xl, .max-w-4xl { max-width: none !important; width: 100%; }
     </style>
 
     @stack('styles')

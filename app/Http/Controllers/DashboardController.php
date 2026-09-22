@@ -9,25 +9,14 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        $totalTeachers     = DB::table('tblTeacher')->count();
-        $totalDepartments  = DB::table('tblDepartment')->count();
-        $totalSubjects     = DB::table('tblSubject')->count();
-        $totalBatches      = DB::table('tblBatch')->count();
-        $totalRooms        = DB::table('tblRoom')->count();
-        $totalDevices      = DB::table('tblDevice')->count();
-        $totalLeaveTypes   = DB::table('tblLeaveType')->count();
-        $pendingLeaves     = DB::table('tblLeave')->where('status', 'Pending')->count();
+        $totalRosterPeople = DB::table('tblRosterPerson')->where('Status', 1)->count();
+        $totalDevices = DB::table('tblDevice')->where('Status', 1)->count();
+        $totalRosterShifts = DB::table('tblRosterShift')->where('Status', 1)->count();
+        $todayAssignments = DB::table('tblRosterAssignment')
+            ->whereDate('RosterDate', now()->toDateString())
+            ->where('Status', 'Active')
+            ->count();
 
-
-        return view('dashboard', compact(
-            'totalTeachers',
-            'totalSubjects',
-            'totalRooms',
-            'totalDepartments',
-            'totalLeaveTypes',
-            'totalBatches',
-            'totalDevices',
-            'pendingLeaves'
-        ));
+        return view('dashboard', compact('totalRosterPeople', 'totalDevices', 'totalRosterShifts', 'todayAssignments'));
     }
 }
