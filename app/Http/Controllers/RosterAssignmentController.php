@@ -61,7 +61,7 @@ class RosterAssignmentController extends Controller
     {
         return [
             'assignment' => $assignment,
-            'people' => DB::table('tblRosterPerson')->where('Status', 1)->where('RunsRoster', 1)->orderBy('PersonName')->get(),
+            'people' => DB::table('tblRosterPerson')->where('Status', 1)->orderBy('PersonName')->get(),
             'shifts' => DB::table('tblRosterShift')->where('Status', 1)->orderBy('StartTime')->get(),
             'locations' => DB::table('tblRosterLocation')->where('Status', 1)->orderBy('LocationName')->get(),
             'devices' => DB::table('tblDevice')->where('Status', 1)->orderBy('DeviceName')->get(),

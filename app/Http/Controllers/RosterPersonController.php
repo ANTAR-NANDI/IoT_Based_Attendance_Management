@@ -53,9 +53,9 @@ class RosterPersonController extends Controller
             'DepartmentID' => ['required', 'exists:tblDepartment,DepartmentID'],
             'DesignationID' => ['required', 'exists:tblDesignation,DesignationID'],
             'ZKUserID' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'ZKUserID')->ignore($person?->RosterPersonID, 'RosterPersonID')],
-            'RunsRoster' => ['required', 'boolean'],
+            'WorkMode' => ['required', Rule::in(['Normal', 'Roster', 'Both'])],
             'Status' => ['required', 'boolean'],
-        ]) + $this->names($request);
+        ]) + $this->names($request) + ['RunsRoster' => $request->WorkMode !== 'Normal'];
     }
 
     private function formData($person = null): array { return ['person' => $person, 'departments' => DB::table('tblDepartment')->where('Status', 1)->orderBy('DepartmentName')->get(), 'designations' => DB::table('tblDesignation')->where('Status', 1)->orderBy('DesignationName')->get()]; }
