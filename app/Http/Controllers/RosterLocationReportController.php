@@ -30,7 +30,7 @@ class RosterLocationReportController extends RosterReportController
         $title = 'Room-wise Attendance Report';
         $subtitle = $location->LocationName.' - '.\Carbon\Carbon::parse($reportDate)->format('d M Y');
         $mode = 'room';
-        return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'landscape')->download("room-attendance-{$reportDate}.pdf");
+        return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'portrait')->download("room-attendance-{$reportDate}.pdf");
     }
     private function timeline($rows, string $reportDate)
     {

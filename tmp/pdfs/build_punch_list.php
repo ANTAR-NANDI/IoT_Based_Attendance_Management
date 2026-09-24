@@ -13,7 +13,8 @@ $punches = [
     [9, '3:50:46 PM', 'Nurul Kaiser Munna', '2'], [10, '3:53:33 PM', 'Nurul Kaiser Munna', '2'],
     [11, '3:54:44 PM', 'Nurul Kaiser Munna', '2'], [12, '3:59:41 PM', 'Antar Nandi', '1'],
     [13, '4:01:12 PM', 'Nurul Kaiser Munna', '2'], [14, '4:04:03 PM', 'Nurul Kaiser Munna', '2'],
-    [15, '4:07:18 PM', 'Antar Nandi', '1'], [16, '4:08:08 PM', 'Nurul Kaiser Munna', '2'],
+    [15, '4:06:08 PM', 'Nurul Kaiser Munna', '2'], [16, '4:07:18 PM', 'Antar Nandi', '1'],
+    [17, '4:08:08 PM', 'Nurul Kaiser Munna', '2'],
 ];
 
 $rows = '';

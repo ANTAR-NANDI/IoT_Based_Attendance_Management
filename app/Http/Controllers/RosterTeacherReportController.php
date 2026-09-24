@@ -30,7 +30,7 @@ class RosterTeacherReportController extends RosterReportController
         $title = 'Teacher-wise Attendance Report';
         $subtitle = $person->PersonName.' - '.\Carbon\Carbon::parse($reportDate)->format('d M Y');
         $mode = 'teacher';
-        return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'landscape')->download("teacher-attendance-{$reportDate}.pdf");
+        return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'portrait')->download("teacher-attendance-{$reportDate}.pdf");
     }
 
     private function timeline($rows, string $reportDate)
