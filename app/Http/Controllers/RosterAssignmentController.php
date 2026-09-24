@@ -65,6 +65,9 @@ class RosterAssignmentController extends Controller
             'shifts' => DB::table('tblRosterShift')->where('Status', 1)->orderBy('StartTime')->get(),
             'locations' => DB::table('tblRosterLocation')->where('Status', 1)->orderBy('LocationName')->get(),
             'devices' => DB::table('tblDevice')->where('Status', 1)->orderBy('DeviceName')->get(),
+            'departments' => DB::table('tblDepartment')->orderBy('DepartmentName')->get(),
+            'batches' => DB::table('tblBatch')->where('Status', 1)->orderBy('BatchName')->get(),
+            'subjects' => DB::table('tblSubject')->orderBy('SubjectName')->get(),
         ];
     }
 
@@ -78,19 +81,40 @@ class RosterAssignmentController extends Controller
             'Weekdays.*' => ['integer', 'between:0,6'],
             'RosterPersonID' => ['required', 'exists:tblRosterPerson,RosterPersonID'],
             'ProxyPersonID' => ['nullable', 'exists:tblRosterPerson,RosterPersonID', 'different:RosterPersonID'],
-            'RosterShiftID' => ['required', 'exists:tblRosterShift,RosterShiftID'],
+            'RosterShiftID' => ['nullable', 'exists:tblRosterShift,RosterShiftID'],
+            'CustomStartTime' => ['nullable', 'date_format:H:i'],
+            'CustomEndTime' => ['nullable', 'date_format:H:i'],
             'RosterLocationID' => ['nullable', 'exists:tblRosterLocation,RosterLocationID'],
             'DeviceID' => ['nullable', 'exists:tblDevice,DeviceID'],
             'AssignmentType' => ['required', Rule::in(['General Duty', 'Class Duty', 'Exam Duty', 'Other'])],
+            'DepartmentID' => ['nullable', 'exists:tblDepartment,DepartmentID'],
+            'BatchID' => ['nullable', 'exists:tblBatch,BatchID'],
+            'SubjectID' => ['nullable', 'exists:tblSubject,SubjectID'],
             'Status' => ['required', Rule::in(['Active', 'Cancelled'])],
             'Remarks' => ['nullable', 'max:255'],
         ]);
+        if ($input['AssignmentType'] === 'Class Duty') {
+            foreach (['DepartmentID' => 'department', 'BatchID' => 'batch', 'SubjectID' => 'subject'] as $field => $label) {
+                if (empty($input[$field])) throw \Illuminate\Validation\ValidationException::withMessages([$field => "Select the class {$label}."]);
+            }
+            if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact class start and end time.']);
+            $subjectDepartment = DB::table('tblSubject')->where('SubjectID', $input['SubjectID'])->value('DepartmentID');
+            if ((int) $subjectDepartment !== (int) $input['DepartmentID']) throw \Illuminate\Validation\ValidationException::withMessages(['SubjectID' => 'The subject must belong to the selected department.']);
+        } elseif ($input['AssignmentType'] === 'Exam Duty') {
+            if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact exam start and end time.']);
+        } elseif (empty($input['RosterShiftID'])) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['RosterShiftID' => 'Select a shift template for a general, exam, or other duty.']);
+        }
         unset($input['EndDate'], $input['RepeatMode'], $input['Weekdays']);
-        $shift = DB::table('tblRosterShift')->where('RosterShiftID', $input['RosterShiftID'])->firstOrFail();
+        $shift = !empty($input['RosterShiftID']) ? DB::table('tblRosterShift')->where('RosterShiftID', $input['RosterShiftID'])->firstOrFail() : null;
+        $usesExactTime = in_array($input['AssignmentType'], ['Class Duty', 'Exam Duty'], true);
+        $customStart = $usesExactTime ? ($input['CustomStartTime'] ?? null) : null;
+        $customEnd = $usesExactTime ? ($input['CustomEndTime'] ?? null) : null;
+        unset($input['CustomStartTime'], $input['CustomEndTime']);
         $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
         return $input + [
-            'StartTime' => $shift->StartTime, 'EndTime' => $shift->EndTime,
-            'CrossesMidnight' => $shift->CrossesMidnight,
+            'StartTime' => $customStart ?: $shift->StartTime, 'EndTime' => $customEnd ?: $shift->EndTime,
+            'CrossesMidnight' => $customStart ? false : $shift->CrossesMidnight,
             'EntryEarlyMinutes' => $grace->EntryEarlyMinutes, 'EntryLateMinutes' => $grace->EntryLateMinutes,
             'ExitEarlyMinutes' => $grace->ExitEarlyMinutes, 'ExitLateMinutes' => $grace->ExitLateMinutes,
         ];
@@ -155,9 +179,12 @@ class RosterAssignmentController extends Controller
         return DB::table('tblRosterAssignment as ra')
             ->join('tblRosterPerson as p', 'ra.RosterPersonID', '=', 'p.RosterPersonID')
             ->leftJoin('tblRosterPerson as proxy', 'ra.ProxyPersonID', '=', 'proxy.RosterPersonID')
-            ->join('tblRosterShift as s', 'ra.RosterShiftID', '=', 's.RosterShiftID')
+            ->leftJoin('tblRosterShift as s', 'ra.RosterShiftID', '=', 's.RosterShiftID')
             ->leftJoin('tblRosterLocation as l', 'ra.RosterLocationID', '=', 'l.RosterLocationID')
             ->leftJoin('tblDevice as d', 'ra.DeviceID', '=', 'd.DeviceID')
-            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'proxy.PersonName as ProxyPersonName', 's.ShiftName', 'l.LocationName', 'd.DeviceName');
+            ->leftJoin('tblDepartment as dept', 'ra.DepartmentID', '=', 'dept.DepartmentID')
+            ->leftJoin('tblBatch as batch', 'ra.BatchID', '=', 'batch.BatchID')
+            ->leftJoin('tblSubject as subject', 'ra.SubjectID', '=', 'subject.SubjectID')
+            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'proxy.PersonName as ProxyPersonName', 's.ShiftName', 'l.LocationName', 'd.DeviceName', 'dept.DepartmentName as AcademicDepartmentName', 'batch.BatchName', 'batch.Session as AcademicSession', 'batch.Semester as AcademicSemester', 'subject.Code as SubjectCode', 'subject.SubjectName');
     }
 }

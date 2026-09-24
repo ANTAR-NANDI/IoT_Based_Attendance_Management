@@ -18,7 +18,10 @@ class RosterReportController extends Controller
             ->leftJoin('tblRosterPerson as proxy', 'ra.ProxyPersonID', '=', 'proxy.RosterPersonID')
             ->leftJoin('tblRosterLocation as l', 'ra.RosterLocationID', '=', 'l.RosterLocationID')
             ->leftJoin('tblDevice as d', 'ra.DeviceID', '=', 'd.DeviceID')
-            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'p.ZKUserID', 'proxy.PersonName as ProxyPersonName', 'proxy.ZKUserID as ProxyZKUserID', 'l.LocationName', 'd.DeviceName')
+            ->leftJoin('tblDepartment as dept', 'ra.DepartmentID', '=', 'dept.DepartmentID')
+            ->leftJoin('tblBatch as batch', 'ra.BatchID', '=', 'batch.BatchID')
+            ->leftJoin('tblSubject as subject', 'ra.SubjectID', '=', 'subject.SubjectID')
+            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'p.ZKUserID', 'proxy.PersonName as ProxyPersonName', 'proxy.ZKUserID as ProxyZKUserID', 'l.LocationName', 'd.DeviceName', 'dept.DepartmentName as AcademicDepartmentName', 'batch.BatchName', 'batch.Session as AcademicSession', 'batch.Semester as AcademicSemester', 'subject.Code as SubjectCode', 'subject.SubjectName')
             ->whereBetween('ra.RosterDate', [$fromDate, $toDate])->where('ra.Status', 'Active')
             ->when($request->filled('role'), fn ($q) => $q->where('p.RoleName', $request->role))
             ->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
@@ -55,14 +58,17 @@ class RosterReportController extends Controller
         $exitOpen = $end->copy()->subMinutes($grace->ExitEarlyMinutes);
         $exitClose = $end->copy()->addMinutes($grace->ExitLateMinutes)->endOfMinute();
         $deviceLogs = ($logs->get($a->DeviceID) ?? collect())->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $exitClose))->values();
-        $result = ['RosterDate' => $a->RosterDate, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'Start' => $start->format('h:i A'), 'End' => $end->format('h:i A'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null];
+        $result = ['RosterDate' => $a->RosterDate, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('h:i A'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null];
         foreach ([['zk' => $a->ZKUserID, 'name' => $a->PersonName, 'proxy' => false], ['zk' => $a->ProxyZKUserID, 'name' => $a->ProxyPersonName, 'proxy' => true]] as $candidate) {
             if (!$candidate['zk']) continue;
             $personLogs = $deviceLogs->filter(fn ($log) => (string) $log->EmployeeID === (string) $candidate['zk'])->values();
             $entries = $personLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $entryClose));
             if ($entries->isEmpty()) continue;
             $in = Carbon::parse($entries->first()->PunchTime);
-            $outs = $personLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($exitOpen, $exitClose) && Carbon::parse($log->PunchTime)->gt($in));
+            // The first valid punch is check-in and the last later punch before
+            // the close of the duty window is check-out. This deliberately
+            // includes an early departure so it can be reported as Early out.
+            $outs = $personLogs->filter(fn ($log) => Carbon::parse($log->PunchTime)->gt($in) && Carbon::parse($log->PunchTime)->lte($exitClose));
             $out = $outs->isNotEmpty() ? Carbon::parse($outs->last()->PunchTime) : null;
             $result['ActualPerson'] = $candidate['name']; $result['CheckIn'] = $in->format('h:i A'); $result['CheckOut'] = $out?->format('h:i A');
             $result['Status'] = $candidate['proxy'] ? 'Proxy' : ($out ? 'Present' : 'No Punch-out');
