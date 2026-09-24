@@ -11,14 +11,21 @@ class RosterLocationReportController extends RosterReportController
 {
     public function index(Request $request)
     {
-        $request->validate(['report_date' => ['nullable', 'date'], 'RosterLocationID' => ['nullable', 'exists:tblRosterLocation,RosterLocationID']]);
+        $request->validate([
+            'report_date' => ['nullable', 'date'],
+            'RosterLocationIDs' => ['nullable', 'array'],
+            'RosterLocationIDs.*' => ['exists:tblRosterLocation,RosterLocationID'],
+        ]);
         $reportDate = $request->input('report_date', now()->toDateString());
         $locations = DB::table('tblRosterLocation')->where('Status', 1)->orderBy('LocationName')->get();
-        $locationId = $request->input('RosterLocationID');
-        $location = $locationId ? $locations->firstWhere('RosterLocationID', (int) $locationId) : null;
-        $rows = $locationId ? $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->where('ra.RosterLocationID', $locationId)) : collect();
-        $timeline = $this->timeline($rows, $reportDate);
-        return view('roster.reports.location', compact('reportDate', 'locations', 'locationId', 'location', 'rows', 'timeline'));
+        $locationIds = collect($request->input('RosterLocationIDs', []))->map(fn ($id) => (int) $id)->unique()->values();
+        $selectedLocations = $locations->whereIn('RosterLocationID', $locationIds->all())->values();
+        $rows = $locationIds->isNotEmpty()
+            ? $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()))
+            : collect();
+        $matrix = $this->scheduleMatrix($rows);
+
+        return view('roster.reports.location', compact('reportDate', 'locations', 'locationIds', 'selectedLocations', 'rows', 'matrix'));
     }
 
     public function exportPdf(Request $request)
@@ -32,20 +39,23 @@ class RosterLocationReportController extends RosterReportController
         $mode = 'room';
         return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'portrait')->download("room-attendance-{$reportDate}.pdf");
     }
-    private function timeline($rows, string $reportDate)
+    private function scheduleMatrix($rows)
     {
-        $items = collect();
-        $lastEnd = null;
-        foreach ($rows->sortBy('StartRaw') as $row) {
-            $start = Carbon::parse($reportDate.' '.$row['StartRaw']);
-            $end = Carbon::parse($reportDate.' '.$row['EndRaw']);
-            if ($end->lessThanOrEqualTo($start)) $end->addDay();
-            if ($lastEnd && $start->gt($lastEnd)) {
-                $items->push(['blank' => true, 'Start' => $lastEnd->format('h:i A'), 'End' => $start->format('h:i A')]);
+        $slots = [];
+        foreach ($rows as $row) {
+            $key = $row['StartRaw'].'|'.$row['EndRaw'];
+            if (!isset($slots[$key])) {
+                $slots[$key] = [
+                    'Start' => $row['Start'],
+                    'End' => $row['End'],
+                    'StartRaw' => $row['StartRaw'],
+                    'rooms' => [],
+                ];
             }
-            $items->push(['blank' => false, 'row' => $row]);
-            if (!$lastEnd || $end->gt($lastEnd)) $lastEnd = $end;
+            $slots[$key]['rooms'][$row['RosterLocationID']] = $row;
         }
-        return $items;
+
+        uasort($slots, fn ($left, $right) => strcmp($left['StartRaw'], $right['StartRaw']));
+        return collect($slots)->values();
     }
 }
