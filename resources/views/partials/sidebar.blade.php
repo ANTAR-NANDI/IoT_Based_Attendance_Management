@@ -20,6 +20,8 @@
             ['route' => 'roster.rotation.create', 'label' => '24-Hour Security Rotation'],
             ['heading' => 'Reports'],
             ['route' => 'reports.roster-attendance', 'label' => 'Roster Attendance Report'],
+            ['route' => 'reports.room-attendance', 'label' => 'Room-wise Attendance'],
+            ['route' => 'reports.teacher-attendance', 'label' => 'Teacher-wise Attendance'],
         ];
     @endphp
     <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">

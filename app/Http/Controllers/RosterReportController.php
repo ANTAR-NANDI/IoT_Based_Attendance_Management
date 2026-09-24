@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class RosterReportController extends Controller
 {
@@ -13,27 +14,33 @@ class RosterReportController extends Controller
         $request->validate(['from_date' => ['nullable', 'date'], 'to_date' => ['nullable', 'date', 'after_or_equal:from_date'], 'role' => ['nullable', 'string']]);
         $fromDate = $request->input('from_date', now()->toDateString());
         $toDate = $request->input('to_date', $fromDate);
-        $assignments = DB::table('tblRosterAssignment as ra')
-            ->join('tblRosterPerson as p', 'ra.RosterPersonID', '=', 'p.RosterPersonID')
-            ->leftJoin('tblRosterPerson as proxy', 'ra.ProxyPersonID', '=', 'proxy.RosterPersonID')
-            ->leftJoin('tblRosterLocation as l', 'ra.RosterLocationID', '=', 'l.RosterLocationID')
-            ->leftJoin('tblDevice as d', 'ra.DeviceID', '=', 'd.DeviceID')
-            ->leftJoin('tblDepartment as dept', 'ra.DepartmentID', '=', 'dept.DepartmentID')
-            ->leftJoin('tblBatch as batch', 'ra.BatchID', '=', 'batch.BatchID')
-            ->leftJoin('tblSubject as subject', 'ra.SubjectID', '=', 'subject.SubjectID')
-            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'p.ZKUserID', 'proxy.PersonName as ProxyPersonName', 'proxy.ZKUserID as ProxyZKUserID', 'l.LocationName', 'd.DeviceName', 'dept.DepartmentName as AcademicDepartmentName', 'batch.BatchName', 'batch.Session as AcademicSession', 'batch.Semester as AcademicSemester', 'subject.Code as SubjectCode', 'subject.SubjectName')
-            ->whereBetween('ra.RosterDate', [$fromDate, $toDate])->where('ra.Status', 'Active')
-            ->when($request->filled('role'), fn ($q) => $q->where('p.RoleName', $request->role))
-            ->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
+        $rows = $this->attendanceRows($fromDate, $toDate, function ($query) use ($request) {
+            if ($request->filled('role')) $query->where('p.RoleName', $request->role);
+        });
+        $summary = $this->summaryFor($rows);
 
-        $logs = $assignments->isEmpty() ? collect() : DB::table('tblAttendanceLog')
-            ->whereIn('DeviceID', $assignments->pluck('DeviceID')->filter()->unique())
-            ->whereBetween('PunchTime', [Carbon::parse($fromDate)->subDay(), Carbon::parse($toDate)->endOfDay()->addDay()])
-            ->orderBy('PunchTime')->get()->groupBy('DeviceID');
+        $roles = DB::table('tblRosterPerson')->distinct()->orderBy('RoleName')->pluck('RoleName');
+        return view('roster.reports.index', compact('rows', 'summary', 'fromDate', 'toDate', 'roles'));
+    }
 
-        $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
-        $rows = $assignments->map(fn ($assignment) => $this->evaluate($assignment, $logs, $grace));
-        $summary = $rows->groupBy(fn ($row) => $row['RoleName'].'|'.$row['PersonName'])->map(function ($items) {
+    public function exportPdf(Request $request)
+    {
+        $request->validate(['from_date' => ['nullable', 'date'], 'to_date' => ['nullable', 'date', 'after_or_equal:from_date'], 'role' => ['nullable', 'string']]);
+        $fromDate = $request->input('from_date', now()->toDateString());
+        $toDate = $request->input('to_date', $fromDate);
+        $rows = $this->attendanceRows($fromDate, $toDate, function ($query) use ($request) {
+            if ($request->filled('role')) $query->where('p.RoleName', $request->role);
+        });
+        $summary = $this->summaryFor($rows);
+        $role = $request->input('role', 'All roles');
+        return Pdf::loadView('roster.reports.pdf', compact('rows', 'summary', 'fromDate', 'toDate', 'role'))
+            ->setPaper('a4', 'landscape')
+            ->download("roster-attendance-{$fromDate}-to-{$toDate}.pdf");
+    }
+
+    protected function summaryFor($rows)
+    {
+        return $rows->groupBy(fn ($row) => $row['RoleName'].'|'.$row['PersonName'])->map(function ($items) {
             return [
                 'RoleName' => $items->first()['RoleName'], 'PersonName' => $items->first()['PersonName'],
                 'Scheduled' => $items->count(), 'Present' => $items->where('Status', 'Present')->count(),
@@ -43,12 +50,33 @@ class RosterReportController extends Controller
                 'ScheduledMinutes' => $items->sum('ScheduledMinutes'), 'ActualMinutes' => $items->sum('ActualMinutes'), 'ShortMinutes' => $items->sum('ShortMinutes'),
             ];
         })->values();
-
-        $roles = DB::table('tblRosterPerson')->distinct()->orderBy('RoleName')->pluck('RoleName');
-        return view('roster.reports.index', compact('rows', 'summary', 'fromDate', 'toDate', 'roles'));
     }
 
-    private function evaluate($a, $logs, $grace): array
+    protected function attendanceRows(string $fromDate, string $toDate, ?callable $filter = null)
+    {
+        $query = DB::table('tblRosterAssignment as ra')
+            ->join('tblRosterPerson as p', 'ra.RosterPersonID', '=', 'p.RosterPersonID')
+            ->leftJoin('tblRosterPerson as proxy', 'ra.ProxyPersonID', '=', 'proxy.RosterPersonID')
+            ->leftJoin('tblRosterLocation as l', 'ra.RosterLocationID', '=', 'l.RosterLocationID')
+            ->leftJoin('tblDevice as d', 'ra.DeviceID', '=', 'd.DeviceID')
+            ->leftJoin('tblDepartment as dept', 'ra.DepartmentID', '=', 'dept.DepartmentID')
+            ->leftJoin('tblBatch as batch', 'ra.BatchID', '=', 'batch.BatchID')
+            ->leftJoin('tblSubject as subject', 'ra.SubjectID', '=', 'subject.SubjectID')
+            ->select('ra.*', 'p.PersonName', 'p.RoleName', 'p.ZKUserID', 'proxy.PersonName as ProxyPersonName', 'proxy.ZKUserID as ProxyZKUserID', 'l.LocationName', 'd.DeviceName', 'dept.DepartmentName as AcademicDepartmentName', 'batch.BatchName', 'batch.Session as AcademicSession', 'batch.Semester as AcademicSemester', 'subject.Code as SubjectCode', 'subject.SubjectName')
+            ->whereBetween('ra.RosterDate', [$fromDate, $toDate])->where('ra.Status', 'Active');
+        if ($filter) $filter($query);
+        $assignments = $query->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
+
+        $logs = $assignments->isEmpty() ? collect() : DB::table('tblAttendanceLog')
+            ->whereIn('DeviceID', $assignments->pluck('DeviceID')->filter()->unique())
+            ->whereBetween('PunchTime', [Carbon::parse($fromDate)->subDay(), Carbon::parse($toDate)->endOfDay()->addDay()])
+            ->orderBy('PunchTime')->get()->groupBy('DeviceID');
+
+        $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
+        return $assignments->map(fn ($assignment) => $this->evaluate($assignment, $logs, $grace));
+    }
+
+    protected function evaluate($a, $logs, $grace): array
     {
         $start = Carbon::parse($a->RosterDate.' '.$a->StartTime);
         $end = Carbon::parse($a->RosterDate.' '.$a->EndTime);
@@ -58,7 +86,7 @@ class RosterReportController extends Controller
         $exitOpen = $end->copy()->subMinutes($grace->ExitEarlyMinutes);
         $exitClose = $end->copy()->addMinutes($grace->ExitLateMinutes)->endOfMinute();
         $deviceLogs = ($logs->get($a->DeviceID) ?? collect())->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $exitClose))->values();
-        $result = ['RosterDate' => $a->RosterDate, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('h:i A'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null];
+        $result = ['RosterDate' => $a->RosterDate, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('h:i A'), 'StartRaw' => $start->format('H:i:s'), 'EndRaw' => $end->format('H:i:s'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null];
         foreach ([['zk' => $a->ZKUserID, 'name' => $a->PersonName, 'proxy' => false], ['zk' => $a->ProxyZKUserID, 'name' => $a->ProxyPersonName, 'proxy' => true]] as $candidate) {
             if (!$candidate['zk']) continue;
             $personLogs = $deviceLogs->filter(fn ($log) => (string) $log->EmployeeID === (string) $candidate['zk'])->values();

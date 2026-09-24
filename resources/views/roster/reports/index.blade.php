@@ -12,7 +12,7 @@
             <div><label class="text-xs font-semibold">From date</label><input type="date" name="from_date" value="{{ $fromDate }}" class="mt-1 w-full rounded border p-2"></div>
             <div><label class="text-xs font-semibold">To date</label><input type="date" name="to_date" value="{{ $toDate }}" class="mt-1 w-full rounded border p-2"></div>
             <div><label class="text-xs font-semibold">Role</label><select name="role" class="mt-1 w-full rounded border p-2"><option value="">All roles</option>@foreach($roles as $role)<option value="{{ $role }}" @selected(request('role') === $role)>{{ $role }}</option>@endforeach</select></div>
-            <div class="self-end"><button class="rounded-lg bg-indigo-600 px-5 py-2 text-white">Filter report</button></div>
+            <div class="self-end flex gap-2"><button class="rounded-lg bg-indigo-600 px-5 py-2 text-white">Filter report</button><a href="{{ route('reports.roster-attendance.pdf', request()->query()) }}" class="rounded-lg bg-red-600 px-5 py-2 text-white">Export PDF</a></div>
         </div>
     </form>
 
@@ -40,7 +40,13 @@
                     <div class="text-xs text-slate-500">{{ $row['AcademicDepartmentName'] }} · {{ $row['BatchName'] }} · {{ $row['AcademicSession'] }}, Sem {{ $row['AcademicSemester'] }}</div>
                     @endif
                 </td>
-                <td class="p-3">{{ $row['ActualPerson'] ?? '—' }}
+                <td class="p-3">
+                    @if($row['ActualPerson'])
+                        @if($row['Status'] === 'Proxy')<span class="font-medium text-amber-700">Proxy teacher: {{ $row['ActualPerson'] }}</span>
+                        @else Actual teacher: {{ $row['ActualPerson'] }}
+                        @endif
+                    @else —
+                    @endif
                     @if(!empty($row['ProxyPersonName']))<div class="text-xs text-slate-500">Planned proxy: {{ $row['ProxyPersonName'] }}</div>@endif
                 </td>
                 <td class="p-3">{{ $row['LocationName'] ?? '—' }}<div class="text-xs text-slate-500">{{ $row['DeviceName'] ?? 'No device' }}</div></td>
