@@ -30,14 +30,21 @@ class RosterLocationReportController extends RosterReportController
 
     public function exportPdf(Request $request)
     {
-        $request->validate(['report_date' => ['required', 'date'], 'RosterLocationID' => ['required', 'exists:tblRosterLocation,RosterLocationID']]);
+        $request->validate([
+            'report_date' => ['required', 'date'],
+            'RosterLocationIDs' => ['required', 'array', 'min:1'],
+            'RosterLocationIDs.*' => ['exists:tblRosterLocation,RosterLocationID'],
+        ]);
         $reportDate = $request->report_date;
-        $location = DB::table('tblRosterLocation')->where('RosterLocationID', $request->RosterLocationID)->firstOrFail();
-        $rows = $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->where('ra.RosterLocationID', $location->RosterLocationID));
+        $locationIds = collect($request->RosterLocationIDs)->map(fn ($id) => (int) $id)->unique()->values();
+        $selectedLocations = DB::table('tblRosterLocation')->whereIn('RosterLocationID', $locationIds)->orderBy('LocationName')->get();
+        $rows = $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()));
+        $matrix = $this->scheduleMatrix($rows);
         $title = 'Room-wise Attendance Report';
-        $subtitle = $location->LocationName.' - '.\Carbon\Carbon::parse($reportDate)->format('d M Y');
-        $mode = 'room';
-        return Pdf::loadView('roster.reports.selection-pdf', compact('rows', 'title', 'subtitle', 'mode'))->setPaper('a4', 'portrait')->download("room-attendance-{$reportDate}.pdf");
+        $subtitle = $selectedLocations->pluck('LocationName')->join(', ').' - '.\Carbon\Carbon::parse($reportDate)->format('d M Y');
+        return Pdf::loadView('roster.reports.room-matrix-pdf', compact('matrix', 'selectedLocations', 'title', 'subtitle'))
+            ->setPaper('a4', 'portrait')
+            ->stream("room-attendance-{$reportDate}.pdf");
     }
     private function scheduleMatrix($rows)
     {

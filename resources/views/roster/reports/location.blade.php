@@ -33,13 +33,16 @@
             </div>
             <div class="self-end">
                 <button class="rounded-lg bg-indigo-600 px-5 py-2 text-white">View room report</button>
+                @if($selectedLocations->isNotEmpty())
+                    <button type="button" id="pdf-preview-button" class="ml-2 rounded-lg bg-red-600 px-5 py-2 text-white">Preview / Print PDF</button>
+                @endif
             </div>
         </div>
     </form>
 
     @if($selectedLocations->isNotEmpty())
         <div class="overflow-x-auto rounded-xl border bg-white">
-            <table class="w-auto border-collapse text-sm">
+            <table class="w-full table-fixed border-collapse text-sm">
                 <thead class="bg-slate-800 text-white">
                     <tr>
                         <th style="width: 150px" class="border-r border-slate-500 px-3 py-3 text-left">Time slot</th>
@@ -54,22 +57,22 @@
                             <td class="border-r bg-slate-100 px-3 py-4 font-bold text-slate-800">{{ $slot['Start'] }} - {{ $slot['End'] }}</td>
                             @foreach($selectedLocations as $location)
                                 @php($row = $slot['rooms'][$location->RosterLocationID] ?? null)
-                                <td class="border-r p-1">
+                                <td class="border-r p-1 {{ !$row ? 'bg-slate-200 text-center align-middle' : '' }}">
                                     @if(!$row)
-                                        <div style="max-width: 220px" class="rounded-md bg-slate-200 p-3 text-center text-xs font-semibold text-slate-600">Not scheduled</div>
+                                        <span class="text-xs font-semibold text-slate-600">Not scheduled</span>
                                     @else
                                         @php($colors = match($row['Status']) { 'Present' => 'border-blue-700 bg-blue-200', 'Absent' => 'border-red-700 bg-red-200', 'Proxy' => 'border-amber-700 bg-amber-200', 'No Punch-out' => 'border-orange-700 bg-orange-200', 'Upcoming' => 'border-violet-700 bg-violet-200', 'Running' => 'border-emerald-700 bg-emerald-200', default => 'border-slate-600 bg-slate-200' })
-                                        <div style="max-width: 220px" class="inline-block rounded-lg border-2 {{ $colors }} p-3 text-slate-900">
+                                        <div class="w-full rounded-lg border-2 {{ $colors }} p-3 text-slate-900">
                                             <div class="font-bold">{{ $row['PersonName'] }}</div>
                                             <div class="mt-1 text-sm font-medium">{{ $row['SubjectName'] ? $row['SubjectCode'].' - '.$row['SubjectName'] : $row['AssignmentType'] }}</div>
                                             <div class="text-xs">{{ $row['BatchName'] ? $row['BatchName'].($row['AcademicSemester'] ? ', Sem '.$row['AcademicSemester'] : '') : '' }}</div>
-                                            <div class="mt-3 border-t border-slate-700/30 pt-2 text-sm"><strong>{{ $row['Status'] }}</strong> · {{ number_format((float) $row['ShortMinutes'], 2) }} min short</div>
+                                            <div class="mt-3 border-t border-slate-700/30 pt-2 text-sm"><strong>{{ $row['Status'] }}</strong>{{ (float) $row['ShortMinutes'] >= 5 ? ' · '.number_format((float) $row['ShortMinutes'], 2).' min short' : '' }}</div>
                                             <div class="text-xs">In: {{ $row['CheckIn'] ?? '-' }} · Out: {{ $row['CheckOut'] ?? '-' }}</div>
                                             @if($row['Status'] === 'Proxy' && $row['ActualPerson'])
                                                 <div class="mt-1 text-xs font-semibold text-amber-900">Proxy: {{ $row['ActualPerson'] }}</div>
                                             @endif
-                                            @if($row['LateMinutes'] !== null || $row['EarlyOutMinutes'] !== null)
-                                                <div class="mt-1 text-xs text-red-800">{{ $row['LateMinutes'] !== null ? 'Late '.number_format((float) $row['LateMinutes'], 2).' min' : '' }}{{ $row['LateMinutes'] !== null && $row['EarlyOutMinutes'] !== null ? ' · ' : '' }}{{ $row['EarlyOutMinutes'] !== null ? 'Early out '.number_format((float) $row['EarlyOutMinutes'], 2).' min' : '' }}</div>
+                                            @if((float) ($row['LateMinutes'] ?? 0) >= 5 || (float) ($row['EarlyOutMinutes'] ?? 0) >= 5)
+                                                <div class="mt-1 text-xs text-red-800">{{ (float) ($row['LateMinutes'] ?? 0) >= 5 ? 'Late '.number_format((float) $row['LateMinutes'], 2).' min' : '' }}{{ (float) ($row['LateMinutes'] ?? 0) >= 5 && (float) ($row['EarlyOutMinutes'] ?? 0) >= 5 ? ' · ' : '' }}{{ (float) ($row['EarlyOutMinutes'] ?? 0) >= 5 ? 'Early out '.number_format((float) $row['EarlyOutMinutes'], 2).' min' : '' }}</div>
                                             @endif
                                         </div>
                                     @endif
@@ -81,6 +84,14 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <div id="pdf-preview-panel" class="mt-6 hidden overflow-hidden rounded-xl border bg-white">
+            <div class="flex items-center justify-between border-b px-4 py-3">
+                <h2 class="font-semibold">Room-wise PDF Preview</h2>
+                <a id="pdf-open-tab" href="#" target="_blank" class="text-sm font-semibold text-indigo-600">Open / print in new tab</a>
+            </div>
+            <iframe id="pdf-preview-frame" title="Room-wise attendance PDF preview" class="h-[800px] w-full"></iframe>
         </div>
     @endif
 </div>
@@ -95,6 +106,15 @@
                 placeholder: 'Select rooms',
                 width: '100%',
                 closeOnSelect: false
+            });
+
+            $('#pdf-preview-button').on('click', function () {
+                const form = $(this).closest('form')[0];
+                const query = new URLSearchParams(new FormData(form)).toString();
+                const url = '{{ route('reports.room-attendance.pdf') }}' + '?' + query;
+                $('#pdf-preview-frame').attr('src', url);
+                $('#pdf-open-tab').attr('href', url);
+                $('#pdf-preview-panel').removeClass('hidden')[0].scrollIntoView({ behavior: 'smooth', block: 'start' });
             });
         });
     </script>
