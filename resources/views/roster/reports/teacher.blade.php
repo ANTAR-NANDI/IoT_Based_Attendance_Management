@@ -71,8 +71,8 @@
                                             @if($row['Status'] === 'Proxy' && $row['ActualPerson'])
                                                 <div class="mt-1 text-xs font-semibold text-amber-900">Proxy: {{ $row['ActualPerson'] }}</div>
                                             @endif
-                                            @if((float) ($row['LateMinutes'] ?? 0) >= 5 || (float) ($row['EarlyOutMinutes'] ?? 0) >= 5)
-                                                <div class="mt-1 text-xs text-red-800">{{ (float) ($row['LateMinutes'] ?? 0) >= 5 ? 'Late '.number_format((float) $row['LateMinutes'], 2).' min' : '' }}{{ (float) ($row['LateMinutes'] ?? 0) >= 5 && (float) ($row['EarlyOutMinutes'] ?? 0) >= 5 ? ' · ' : '' }}{{ (float) ($row['EarlyOutMinutes'] ?? 0) >= 5 ? 'Early out '.number_format((float) $row['EarlyOutMinutes'], 2).' min' : '' }}</div>
+                                            @if((float) ($row['LateMinutes'] ?? 0) >= 5 || $row['EarlyOutMinutes'] !== null)
+                                                <div class="mt-1 text-xs text-red-800">{{ (float) ($row['LateMinutes'] ?? 0) >= 5 ? 'Late '.number_format((float) $row['LateMinutes'], 2).' min' : '' }}{{ (float) ($row['LateMinutes'] ?? 0) >= 5 && $row['EarlyOutMinutes'] !== null ? ' · ' : '' }}{{ $row['EarlyOutMinutes'] !== null ? ('Early out '.(($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)) < 60 ? ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)).' sec' : number_format((float) $row['EarlyOutMinutes'], 2).' min')) : '' }}</div>
                                             @endif
                                         </div>
                                     @endif

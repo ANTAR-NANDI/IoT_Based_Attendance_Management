@@ -36,6 +36,7 @@
                                 <span class="small">{{ $row['BatchName'] ? $row['BatchName'].($row['AcademicSemester'] ? ', Sem '.$row['AcademicSemester'] : '') : '' }}</span>
                                 <div class="status">{{ $row['Status'] }}{{ (float) $row['ShortMinutes'] >= 5 ? ' · '.number_format((float) $row['ShortMinutes'], 2).' min short' : '' }}</div>
                                 <span class="small">In: {{ $row['CheckIn'] ?? '-' }} · Out: {{ $row['CheckOut'] ?? '-' }}</span>
+                                @if($row['EarlyOutMinutes'] !== null)<br><span class="small">Early out: {{ ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)) < 60 ? ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)).' sec' : number_format((float) $row['EarlyOutMinutes'], 2).' min' }}</span>@endif
                                 @if($row['Status'] === 'Proxy' && $row['ActualPerson'])<br><span class="small">Proxy: {{ $row['ActualPerson'] }}</span>@endif
                             </td>
                         @endif

@@ -20,7 +20,7 @@
         <div class="border-b bg-slate-50 px-4 py-3 text-xs font-bold uppercase">Employee summary</div>
         <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-100 text-left"><tr><th class="p-3">Person / role</th><th class="p-3">Duties</th><th class="p-3">Present</th><th class="p-3">Proxy</th><th class="p-3">Late</th><th class="p-3">Early out</th><th class="p-3">No out</th><th class="p-3">Absent</th><th class="p-3">Scheduled</th><th class="p-3">Actual</th><th class="p-3">Total short timing</th></tr></thead><tbody>
             @forelse($summary as $item)
-            <tr class="border-t"><td class="p-3 font-medium">{{ $item['PersonName'] }}<div class="text-xs text-slate-500">{{ $item['RoleName'] }}</div></td><td class="p-3">{{ $item['Scheduled'] }}</td><td class="p-3 text-green-700">{{ $item['Present'] }}</td><td class="p-3 text-amber-700">{{ $item['Proxy'] }}</td><td class="p-3">{{ $item['Late'] }}</td><td class="p-3">{{ $item['EarlyOut'] }}</td><td class="p-3">{{ $item['NoPunchOut'] }}</td><td class="p-3 text-red-600">{{ $item['Absent'] }}</td><td class="p-3">{{ $item['ScheduledMinutes'] }} min</td><td class="p-3">{{ $item['ActualMinutes'] }} min</td><td class="p-3 font-semibold text-red-600">{{ $item['ShortMinutes'] }} min</td></tr>
+            <tr class="border-t"><td class="p-3 font-medium">{{ $item['PersonName'] }}<div class="text-xs text-slate-500">{{ $item['RoleName'] }}</div></td><td class="p-3">{{ $item['Scheduled'] }}</td><td class="p-3 text-green-700">{{ $item['Present'] }}</td><td class="p-3 text-amber-700">{{ $item['Proxy'] }}</td><td class="p-3">{{ $item['Late'] }}</td><td class="p-3">{{ $item['EarlyOut'] }}</td><td class="p-3">{{ $item['NoPunchOut'] }}</td><td class="p-3 text-red-600">{{ $item['Absent'] }}</td><td class="p-3">{{ number_format((float) $item['ScheduledMinutes'], 2) }} min</td><td class="p-3">{{ number_format((float) $item['ActualMinutes'], 2) }} min</td><td class="p-3 font-semibold text-red-600">{{ number_format((float) $item['ShortMinutes'], 2) }} min</td></tr>
             @empty
             <tr><td colspan="11" class="p-8 text-center text-slate-500">No roster duties found for this period.</td></tr>
             @endforelse
@@ -54,9 +54,9 @@
                 <td class="p-3">{{ $row['CheckIn'] ?? '—' }} – {{ $row['CheckOut'] ?? '—' }}</td>
                 <td class="p-3">{{ $row['Status'] }}
                     @if($row['LateMinutes'] !== null)<div class="text-xs text-red-600">Late {{ $row['LateMinutes'] }} min</div>@endif
-                    @if($row['EarlyOutMinutes'] !== null)<div class="text-xs text-red-600">Early out {{ $row['EarlyOutMinutes'] }} min</div>@endif
+                    @if($row['EarlyOutMinutes'] !== null)<div class="text-xs text-red-600">Early out {{ ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)) < 60 ? ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)).' sec' : number_format((float) $row['EarlyOutMinutes'], 2).' min' }}</div>@endif
                 </td>
-                <td class="p-3 font-semibold">{{ $row['ShortMinutes'] }} min</td>
+                <td class="p-3 font-semibold">{{ number_format((float) $row['ShortMinutes'], 2) }} min</td>
             </tr>
             @empty
             <tr><td colspan="9" class="p-8 text-center text-slate-500">No details for this period.</td></tr>

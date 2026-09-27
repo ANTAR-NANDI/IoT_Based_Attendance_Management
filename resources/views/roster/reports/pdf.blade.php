@@ -12,7 +12,7 @@ table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; } th, td { 
 <h3>Employee Summary</h3>
 <table><thead><tr><th>Person / Role</th><th>Duties</th><th>Present</th><th>Proxy</th><th>Late</th><th>Early Out</th><th>No Out</th><th>Absent</th><th>Scheduled</th><th>Actual</th><th>Short</th></tr></thead><tbody>
 @forelse($summary as $item)
-<tr><td><strong>{{ $item['PersonName'] }}</strong><br><span class="small">{{ $item['RoleName'] }}</span></td><td>{{ $item['Scheduled'] }}</td><td>{{ $item['Present'] }}</td><td>{{ $item['Proxy'] }}</td><td>{{ $item['Late'] }}</td><td>{{ $item['EarlyOut'] }}</td><td>{{ $item['NoPunchOut'] }}</td><td>{{ $item['Absent'] }}</td><td>{{ $item['ScheduledMinutes'] }} min</td><td>{{ $item['ActualMinutes'] }} min</td><td>{{ $item['ShortMinutes'] }} min</td></tr>
+<tr><td><strong>{{ $item['PersonName'] }}</strong><br><span class="small">{{ $item['RoleName'] }}</span></td><td>{{ $item['Scheduled'] }}</td><td>{{ $item['Present'] }}</td><td>{{ $item['Proxy'] }}</td><td>{{ $item['Late'] }}</td><td>{{ $item['EarlyOut'] }}</td><td>{{ $item['NoPunchOut'] }}</td><td>{{ $item['Absent'] }}</td><td>{{ number_format((float) $item['ScheduledMinutes'], 2) }} min</td><td>{{ number_format((float) $item['ActualMinutes'], 2) }} min</td><td>{{ number_format((float) $item['ShortMinutes'], 2) }} min</td></tr>
 @empty
 <tr><td colspan="11">No duties found.</td></tr>
 @endforelse
@@ -43,10 +43,10 @@ table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; } th, td { 
 <br><span class="small">Late {{ $row['LateMinutes'] }} min</span>
 @endif
 @if($row['EarlyOutMinutes'] !== null)
-<br><span class="small">Early out {{ $row['EarlyOutMinutes'] }} min</span>
+<br><span class="small">Early out {{ ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)) < 60 ? ($row['EarlyOutSeconds'] ?? round((float) $row['EarlyOutMinutes'] * 60)).' sec' : number_format((float) $row['EarlyOutMinutes'], 2).' min' }}</span>
 @endif
 </td>
-<td>{{ $row['ShortMinutes'] }} min</td>
+<td>{{ number_format((float) $row['ShortMinutes'], 2) }} min</td>
 </tr>
 @empty
 <tr><td colspan="9">No duties found.</td></tr>

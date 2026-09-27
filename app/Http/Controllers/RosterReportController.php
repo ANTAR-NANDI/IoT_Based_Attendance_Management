@@ -86,7 +86,7 @@ class RosterReportController extends Controller
         $exitOpen = $end->copy()->subMinutes($grace->ExitEarlyMinutes);
         $exitClose = $end->copy()->addMinutes($grace->ExitLateMinutes)->endOfMinute();
         $deviceLogs = ($logs->get($a->DeviceID) ?? collect())->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $exitClose))->values();
-        $result = ['RosterDate' => $a->RosterDate, 'RosterPersonID' => $a->RosterPersonID, 'RosterLocationID' => $a->RosterLocationID, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('h:i A'), 'StartRaw' => $start->format('H:i:s'), 'EndRaw' => $end->format('H:i:s'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null];
+        $result = ['RosterDate' => $a->RosterDate, 'RosterPersonID' => $a->RosterPersonID, 'RosterLocationID' => $a->RosterLocationID, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('H:i A'), 'StartRaw' => $start->format('H:i:s'), 'EndRaw' => $end->format('H:i:s'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null, 'EarlyOutSeconds' => null];
         foreach ([['zk' => $a->ZKUserID, 'name' => $a->PersonName, 'proxy' => false], ['zk' => $a->ProxyZKUserID, 'name' => $a->ProxyPersonName, 'proxy' => true]] as $candidate) {
             if (!$candidate['zk']) continue;
             $personLogs = $deviceLogs->filter(fn ($log) => (string) $log->EmployeeID === (string) $candidate['zk'])->values();
@@ -102,8 +102,14 @@ class RosterReportController extends Controller
             $result['Status'] = $candidate['proxy'] ? 'Proxy' : ($out ? 'Present' : 'No Punch-out');
             $result['ActualMinutes'] = $out ? $in->diffInMinutes($out) : 0;
             $result['ShortMinutes'] = max(0, $result['ScheduledMinutes'] - $result['ActualMinutes']);
-            $result['LateMinutes'] = $in->gt($start) ? $start->diffInMinutes($in) : null;
-            $result['EarlyOutMinutes'] = $out && $out->lt($end) ? $out->diffInMinutes($end) : null;
+            // Grace time decides whether a deviation is reported. A punch that
+            // falls inside the permitted entry/exit window is still Present,
+            // but is not labelled Late or Early out.
+            $result['LateMinutes'] = $in->gt($entryClose) ? $entryClose->diffInMinutes($in) : null;
+            if ($out && $out->lt($exitOpen)) {
+                $result['EarlyOutSeconds'] = $out->diffInSeconds($exitOpen);
+                $result['EarlyOutMinutes'] = $result['EarlyOutSeconds'] / 60;
+            }
             return $result;
         }
         return $result;
