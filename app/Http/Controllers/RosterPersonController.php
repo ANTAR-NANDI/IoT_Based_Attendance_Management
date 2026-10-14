@@ -2,8 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
 class RosterPersonController extends Controller
@@ -27,7 +29,10 @@ class RosterPersonController extends Controller
     public function store(Request $request)
     {
         $data = $this->validated($request);
-        DB::table('tblRosterPerson')->insert($data + ['created_at' => now(), 'updated_at' => now()]);
+        DB::transaction(function () use ($data, $request) {
+            $personId = DB::table('tblRosterPerson')->insertGetId($data + ['created_at' => now(), 'updated_at' => now()]);
+            $this->saveEmployeeAccount($request, $personId);
+        });
         return redirect()->route('roster.people.index')->with('success', 'Roster person added.');
     }
 
@@ -41,12 +46,16 @@ class RosterPersonController extends Controller
     {
         $person = DB::table('tblRosterPerson')->where('RosterPersonID', $id)->firstOrFail();
         $data = $this->validated($request, $person);
-        DB::table('tblRosterPerson')->where('RosterPersonID', $id)->update($data + ['updated_at' => now()]);
+        DB::transaction(function () use ($data, $request, $id) {
+            DB::table('tblRosterPerson')->where('RosterPersonID', $id)->update($data + ['updated_at' => now()]);
+            $this->saveEmployeeAccount($request, $id);
+        });
         return redirect()->route('roster.people.index')->with('success', 'Roster person updated.');
     }
 
     private function validated(Request $request, $person = null): array
     {
+        $account = $person ? User::where('RosterPersonID', $person->RosterPersonID)->first() : null;
         return $request->validate([
             'EmployeeCode' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'EmployeeCode')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'PersonName' => ['required', 'max:150'],
@@ -55,9 +64,23 @@ class RosterPersonController extends Controller
             'ZKUserID' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'ZKUserID')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'WorkMode' => ['required', Rule::in(['Normal', 'Roster', 'Both'])],
             'Status' => ['required', 'boolean'],
+            'AccountEmail' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($account?->id)],
+            'AccountPassword' => [$account ? 'nullable' : 'required_with:AccountEmail', 'nullable', 'string', 'min:8', 'confirmed'],
         ]) + $this->names($request) + ['RunsRoster' => $request->WorkMode !== 'Normal'];
     }
 
-    private function formData($person = null): array { return ['person' => $person, 'departments' => DB::table('tblDepartment')->where('Status', 1)->orderBy('DepartmentName')->get(), 'designations' => DB::table('tblDesignation')->where('Status', 1)->orderBy('DesignationName')->get()]; }
+    private function saveEmployeeAccount(Request $request, int $personId): void
+    {
+        $email = $request->input('AccountEmail');
+        $account = User::where('RosterPersonID', $personId)->first();
+        if (!$email) return;
+        $person = DB::table('tblRosterPerson')->where('RosterPersonID', $personId)->first();
+        $attributes = ['name' => $person->PersonName, 'email' => $email, 'role' => 'employee', 'RosterPersonID' => $personId];
+        if ($request->filled('AccountPassword')) $attributes['password'] = Hash::make($request->input('AccountPassword'));
+        if ($account) $account->forceFill($attributes)->save();
+        else User::create($attributes);
+    }
+
+    private function formData($person = null): array { return ['person' => $person, 'account' => $person ? User::where('RosterPersonID', $person->RosterPersonID)->first() : null, 'departments' => DB::table('tblDepartment')->where('Status', 1)->orderBy('DepartmentName')->get(), 'designations' => DB::table('tblDesignation')->where('Status', 1)->orderBy('DesignationName')->get()]; }
     private function names(Request $request): array { return ['RoleName' => DB::table('tblDesignation')->where('DesignationID', $request->DesignationID)->value('DesignationName'), 'DepartmentName' => DB::table('tblDepartment')->where('DepartmentID', $request->DepartmentID)->value('DepartmentName')]; }
 }

@@ -2,8 +2,10 @@
 
 use App\Http\Controllers\AttendanceSettingController;
 use App\Http\Controllers\Auth\LoginSessionController;
+use App\Http\Controllers\Auth\PasswordResetOtpController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
+use App\Http\Controllers\EmployeeAttendanceController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\BatchController;
@@ -17,6 +19,7 @@ use App\Http\Controllers\RosterTeacherReportController;
 use App\Http\Controllers\RosterRotationController;
 use App\Http\Controllers\RosterSettingController;
 use App\Http\Controllers\RosterShiftController;
+use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', fn () => redirect()->route('login'));
@@ -24,9 +27,18 @@ Route::get('/', fn () => redirect()->route('login'));
 Route::middleware('guest')->group(function () {
     Route::get('/login', [LoginSessionController::class, 'create'])->name('login');
     Route::post('/login', [LoginSessionController::class, 'store'])->name('login.post');
+    Route::get('/forgot-password', [PasswordResetOtpController::class, 'create'])->name('password.request');
+    Route::post('/forgot-password', [PasswordResetOtpController::class, 'send'])->middleware('throttle:6,1')->name('password.email');
+    Route::get('/reset-password', [PasswordResetOtpController::class, 'showResetForm'])->name('password.otp.form');
+    Route::post('/reset-password', [PasswordResetOtpController::class, 'reset'])->middleware('throttle:8,1')->name('password.otp.reset');
 });
 
 Route::middleware('auth')->group(function () {
+    Route::get('/my-profile', [ProfileController::class, 'edit'])->name('profile.edit');
+    Route::put('/my-profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::get('/my-attendance', [EmployeeAttendanceController::class, 'index'])->middleware('role:employee')->name('employee.attendance');
+
+    Route::middleware('role:admin,superadmin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/dashboard/attendance-settings', [AttendanceSettingController::class, 'edit'])->name('attendance-settings.edit');
     Route::put('/dashboard/attendance-settings', [AttendanceSettingController::class, 'update'])->name('attendance-settings.update');
@@ -49,5 +61,6 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard/reports/room-attendance/pdf', [RosterLocationReportController::class, 'exportPdf'])->name('reports.room-attendance.pdf');
     Route::get('dashboard/reports/teacher-attendance', [RosterTeacherReportController::class, 'index'])->name('reports.teacher-attendance');
     Route::get('dashboard/reports/teacher-attendance/pdf', [RosterTeacherReportController::class, 'exportPdf'])->name('reports.teacher-attendance.pdf');
+    });
     Route::post('/logout', [LoginSessionController::class, 'destroy'])->name('logout');
 });

@@ -55,6 +55,17 @@
 
         /* Roster forms use the full available dashboard width. */
         .max-w-2xl, .max-w-3xl, .max-w-4xl { max-width: none !important; width: 100%; }
+
+        /* Reusable action buttons for all management pages. */
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: .375rem; border-radius: .5rem; padding: .5rem .875rem; font-size: .875rem; font-weight: 700; line-height: 1.25rem; transition: background-color .15s, border-color .15s, color .15s; }
+        .btn-primary { background: var(--brand-blue); color: #fff; border: 1px solid var(--brand-blue); }
+        .btn-primary:hover { background: var(--brand-blue-hover); border-color: var(--brand-blue-hover); }
+        .btn-secondary { background: var(--brand-slate); color: #fff; border: 1px solid var(--brand-slate); }
+        .btn-secondary:hover { background: var(--brand-slate-hover); border-color: var(--brand-slate-hover); }
+        .btn-edit { background: #eff6ff; color: #1d4ed8; border: 1px solid #bfdbfe; }
+        .btn-edit:hover { background: #dbeafe; }
+        .btn-danger { background: #fff1f2; color: #be123c; border: 1px solid #fecdd3; }
+        .btn-danger:hover { background: #ffe4e6; }
     </style>
 
     @stack('styles')

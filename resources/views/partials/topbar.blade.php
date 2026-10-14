@@ -18,7 +18,7 @@
     <div class="flex items-center space-x-3 sm:space-x-6 shrink-0">
         <div class="flex flex-col text-right">
             <span class="text-sm font-bold text-slate-800 truncate max-w-[8rem] sm:max-w-none">{{ Auth::user()->name }}</span>
-            <span class="hidden sm:inline-block text-[10px] text-slate-400 font-extrabold uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded mt-0.5">System Admin</span>
+            <span class="hidden sm:inline-block text-[10px] text-slate-400 font-extrabold uppercase tracking-widest bg-slate-100 px-1.5 py-0.5 rounded mt-0.5">{{ Auth::user()->isSuperAdmin() ? 'Super Admin' : (Auth::user()->isAdmin() ? 'System Admin' : 'Employee') }}</span>
         </div>
 
         <form method="POST" action="{{ route('logout') }}">

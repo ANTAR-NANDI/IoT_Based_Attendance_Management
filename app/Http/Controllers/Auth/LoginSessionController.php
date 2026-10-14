@@ -37,8 +37,9 @@ class LoginSessionController extends Controller
         // Regenerate session to protect against session fixation attacks
         $request->session()->regenerate();
 
-        // Redirect directly to the secure dashboard module
-        return redirect()->intended(route('dashboard'));
+        return Auth::user()->isAdmin()
+            ? redirect()->intended(route('dashboard'))
+            : redirect()->route('employee.attendance');
     }
 
     /**
