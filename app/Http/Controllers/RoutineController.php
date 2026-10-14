@@ -2,401 +2,80 @@
 
 namespace App\Http\Controllers;
 
-use Carbon\Carbon;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Exception;
 
 class RoutineController extends Controller
 {
-    /**
-     * Display Routine List
-     */
+    private const CLASS_DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday'];
+
     public function index(Request $request)
     {
-        $routines = $this->routineQuery($request)
-            ->orderByDesc('ro.RoutineDate')
-            ->orderBy('ro.StartTime')
-            ->paginate(20);
-
+        $routines = $this->query($request)->orderBy('b.BatchName')->orderBy('ro.DayName')->orderBy('ro.StartTime')->paginate(30);
         return view('routines.index', compact('routines'));
     }
 
-    /** Download the current filtered routine list as a print-ready PDF. */
     public function exportPdf(Request $request)
     {
-        $routines = $this->routineQuery($request)
-            ->orderByDesc('ro.RoutineDate')
-            ->orderBy('ro.StartTime')
-            ->get();
-
-        return Pdf::loadView('routines.pdf', compact('routines'))
-            ->setPaper('a4', 'landscape')
-            ->download('routine-'.now()->format('Y-m-d-His').'.pdf');
+        $routines = $this->query($request)->orderBy('b.BatchName')->orderBy('ro.DayName')->orderBy('ro.StartTime')->get();
+        return Pdf::loadView('routines.pdf', compact('routines'))->setPaper('a4', 'landscape')->download('semester-routine-'.now()->format('Y-m-d-His').'.pdf');
     }
 
-    private function routineQuery(Request $request)
-    {
-        $query = DB::table('tblRoutine as ro')
-            ->join('tblTeacher as t', 'ro.TeacherID', '=', 't.TeacherID')
-            ->join('tblSubject as s', 'ro.SubjectID', '=', 's.SubjectID')
-            ->join('tblBatch as b', 'ro.BatchID', '=', 'b.BatchID')
-            ->join('tblRoom as r', 'ro.RoomID', '=', 'r.RoomID')
-            ->join('tblDevice as d', 'ro.DeviceID', '=', 'd.DeviceID')
-            ->select(
-                'ro.*',
-                't.TeacherName',
-                's.SubjectName',
-                'b.BatchName',
-                'r.RoomNo',
-                'd.DeviceName'
-            );
+    public function create() { return view('routines.create', $this->formData()); }
 
-        if ($request->filled('search')) {
-
-            $query->where(function ($q) use ($request) {
-
-                $q->where('t.TeacherName', 'like', "%{$request->search}%")
-                    ->orWhere('s.SubjectName', 'like', "%{$request->search}%")
-                    ->orWhere('b.BatchName', 'like', "%{$request->search}%")
-                    ->orWhere('r.RoomNo', 'like', "%{$request->search}%")
-                    ->orWhere('ro.DayName', 'like', "%{$request->search}%")
-                    ->orWhere('ro.ClassType', 'like', "%{$request->search}%");
-            });
-        }
-
-        if ($request->filled('date')) {
-            $query->whereDate('ro.RoutineDate', $request->date);
-        }
-
-        return $query;
-    }
-
-    /**
-     * Show Create Form
-     */
-    public function create()
-    {
-        $teachers = DB::table('tblTeacher')->orderBy('TeacherName')->get();
-        $subjects = DB::table('tblSubject')->orderBy('SubjectName')->get();
-        $batches  = DB::table('tblBatch')->orderBy('BatchName')->get();
-        $rooms    = DB::table('tblRoom')->orderBy('RoomNo')->get();
-        $devices  = DB::table('tblDevice')->orderBy('DeviceName')->get();
-
-        return view('routines.create', compact(
-            'teachers',
-            'subjects',
-            'batches',
-            'rooms',
-            'devices'
-        ));
-    }
-
-    /**
-     * Store Routine
-     */
     public function store(Request $request)
     {
-        $request->validate([
-
-            'RoutineDate' => 'required|date',
-
-            'TeacherID' => 'required|exists:tblTeacher,TeacherID',
-            'ProxyTeacherID' => 'nullable|exists:tblTeacher,TeacherID|different:TeacherID',
-
-            'SubjectID' => 'required|exists:tblSubject,SubjectID',
-
-            'BatchID' => 'required|exists:tblBatch,BatchID',
-
-            'RoomID' => 'required|exists:tblRoom,RoomID',
-
-            'DeviceID' => 'required|exists:tblDevice,DeviceID',
-
-            'StartTime' => 'required|date_format:H:i',
-
-            'EndTime' => 'required|date_format:H:i|after:StartTime',
-
-            'DayName' => 'required|string|max:20',
-
-            'ClassType' => 'nullable|string|max:30',
-
-            'Remarks' => 'nullable|string',
-
-            'Status' => 'required|boolean',
-
-        ]);
-
-        if (!DB::table('tblDevice')
-            ->where('DeviceID', $request->DeviceID)
-            ->where('Status', 1)
-            ->exists()) {
-            return back()->withInput()->withErrors([
-                'DeviceID' => 'Select an active device.',
-            ]);
-        }
-
-        $conflict = $this->hasConflict($request);
-
-        if ($conflict) {
-            return back()
-                ->withInput()
-                ->with('error', 'Schedule conflict: Room or Teacher or Device is already booked at this time.');
-        }
-
-        try {
-
-            DB::table('tblRoutine')->insert([
-
-                'RoutineDate' => $request->RoutineDate,
-
-                'TeacherID' => $request->TeacherID,
-                'ProxyTeacherID' => $request->ProxyTeacherID,
-
-                'SubjectID' => $request->SubjectID,
-
-                'BatchID' => $request->BatchID,
-
-                'RoomID' => $request->RoomID,
-
-                'DeviceID' => $request->DeviceID,
-
-                'StartTime' => $request->StartTime,
-
-                'EndTime' => $request->EndTime,
-
-                'GraceMinute' => 0,
-
-                'DayName' => $request->DayName,
-
-                'ClassType' => $request->ClassType,
-
-                'Remarks' => $request->Remarks,
-
-                'Status' => $request->Status,
-
-                'created_at' => now(),
-
-                'updated_at' => now(),
-
-            ]);
-
-            return redirect()
-                ->route('routines.index')
-                ->with('success', 'Routine Added Successfully');
-        } catch (Exception $e) {
-
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
-        }
+        $data = $this->validated($request);
+        if ($this->hasConflict($data)) return back()->withInput()->with('error', 'Schedule conflict: this teacher, batch, room, or device already has an overlapping class during this semester.');
+        DB::table('tblRoutine')->insert([...$data, 'RoutineDate' => $data['SemesterStartDate'], 'GraceMinute' => 0, 'created_at' => now(), 'updated_at' => now()]);
+        return redirect()->route('routines.index')->with('success', 'Semester routine slot added. It repeats weekly on the selected day until the semester ends.');
     }
 
-    /**
-     * Display the specified Routine
-     */
-    public function show(string $id)
-    {
-        $routine = DB::table('tblRoutine as ro')
-            ->join('tblTeacher as t', 'ro.TeacherID', '=', 't.TeacherID')
-            ->join('tblSubject as s', 'ro.SubjectID', '=', 's.SubjectID')
-            ->join('tblBatch as b', 'ro.BatchID', '=', 'b.BatchID')
-            ->join('tblRoom as r', 'ro.RoomID', '=', 'r.RoomID')
-            ->join('tblDevice as d', 'ro.DeviceID', '=', 'd.DeviceID')
-            ->select(
-                'ro.*',
-                't.TeacherName',
-                's.SubjectName',
-                'b.BatchName',
-                'r.RoomNo',
-                'd.DeviceName'
-            )
-            ->where('ro.RoutineID', $id)
-            ->first();
-
-        if (!$routine) {
-            abort(404);
-        }
-
-        return view('routines.show', compact('routine'));
-    }
-
-    /**
-     * Show Edit Form
-     */
     public function edit(string $id)
     {
-        $routine = DB::table('tblRoutine')
-            ->where('RoutineID', $id)
-            ->first();
-
-        if (!$routine) {
-            abort(404);
-        }
-
-        $teachers = DB::table('tblTeacher')->orderBy('TeacherName')->get();
-        $subjects = DB::table('tblSubject')->orderBy('SubjectName')->get();
-        $batches  = DB::table('tblBatch')->orderBy('BatchName')->get();
-        $rooms    = DB::table('tblRoom')->orderBy('RoomNo')->get();
-        $devices  = DB::table('tblDevice')->orderBy('DeviceName')->get();
-        $routine->StartTime = Carbon::parse($routine->StartTime)->format('H:i');
-        $routine->EndTime = Carbon::parse($routine->EndTime)->format('H:i');
-        return view('routines.edit', compact(
-            'routine',
-            'teachers',
-            'subjects',
-            'batches',
-            'rooms',
-            'devices'
-        ));
+        $routine = DB::table('tblRoutine')->where('RoutineID', $id)->first();
+        abort_unless($routine, 404);
+        return view('routines.edit', [...$this->formData(), 'routine' => $routine]);
     }
 
-    /**
-     * Update Routine
-     */
     public function update(Request $request, string $id)
     {
-        $request->validate([
-
-            'RoutineDate' => 'required|date',
-
-            'TeacherID' => 'required|exists:tblTeacher,TeacherID',
-            'ProxyTeacherID' => 'nullable|exists:tblTeacher,TeacherID|different:TeacherID',
-
-            'SubjectID' => 'required|exists:tblSubject,SubjectID',
-
-            'BatchID' => 'required|exists:tblBatch,BatchID',
-
-            'RoomID' => 'required|exists:tblRoom,RoomID',
-
-            'DeviceID' => 'required|exists:tblDevice,DeviceID',
-
-            'StartTime' => 'required|date_format:H:i',
-
-            'EndTime' => 'required|date_format:H:i|after:StartTime',
-
-            'DayName' => 'required|string|max:20',
-
-            'ClassType' => 'nullable|string|max:30',
-
-            'Remarks' => 'nullable|string',
-
-            'Status' => 'required|boolean',
-
-        ]);
-
-        if (!DB::table('tblDevice')
-            ->where('DeviceID', $request->DeviceID)
-            ->where('Status', 1)
-            ->exists()) {
-            return back()->withInput()->withErrors([
-                'DeviceID' => 'Select an active device.',
-            ]);
-        }
-
-        $conflict = $this->hasConflict($request, $id);
-
-        if ($conflict) {
-            return back()
-                ->withInput()
-                ->with('error', 'Schedule conflict: Room or Teacher or Device is already booked at this time.');
-        }
-
-        try {
-
-            DB::table('tblRoutine')
-                ->where('RoutineID', $id)
-                ->update([
-
-                    'RoutineDate' => $request->RoutineDate,
-
-                    'TeacherID' => $request->TeacherID,
-                    'ProxyTeacherID' => $request->ProxyTeacherID,
-
-                    'SubjectID' => $request->SubjectID,
-
-                    'BatchID' => $request->BatchID,
-
-                    'RoomID' => $request->RoomID,
-
-                    'DeviceID' => $request->DeviceID,
-
-                    'StartTime' => $request->StartTime,
-
-                    'EndTime' => $request->EndTime,
-
-                    'GraceMinute' => 0,
-
-                    'DayName' => $request->DayName,
-
-                    'ClassType' => $request->ClassType,
-
-                    'Remarks' => $request->Remarks,
-
-                    'Status' => $request->Status,
-
-                    'updated_at' => now(),
-
-                ]);
-
-            return redirect()
-                ->route('routines.index')
-                ->with('success', 'Routine Updated Successfully');
-        } catch (Exception $e) {
-
-            return back()
-                ->withInput()
-                ->with('error', $e->getMessage());
-        }
+        $data = $this->validated($request);
+        if ($this->hasConflict($data, $id)) return back()->withInput()->with('error', 'Schedule conflict: this teacher, batch, room, or device already has an overlapping class during this semester.');
+        DB::table('tblRoutine')->where('RoutineID', $id)->update([...$data, 'RoutineDate' => $data['SemesterStartDate'], 'GraceMinute' => 0, 'updated_at' => now()]);
+        return redirect()->route('routines.index')->with('success', 'Semester routine slot updated.');
     }
 
-    /**
-     * Delete Routine
-     */
     public function destroy(string $id)
     {
-        try {
-
-            DB::table('tblRoutine')
-                ->where('RoutineID', $id)
-                ->delete();
-
-            return redirect()
-                ->route('routines.index')
-                ->with('success', 'Routine Deleted Successfully');
-        } catch (Exception $e) {
-
-            return redirect()
-                ->route('routines.index')
-                ->with('error', $e->getMessage());
-        }
+        DB::table('tblRoutine')->where('RoutineID', $id)->delete();
+        return redirect()->route('routines.index')->with('success', 'Routine slot deleted.');
     }
 
-    /**
-     * Check for overlapping Room / Teacher / Device bookings
-     * on the same date and day, excluding the current record on update.
-     */
-    private function hasConflict(Request $request, $ignoreId = null)
+    private function query(Request $request)
     {
-        $query = DB::table('tblRoutine')
-            ->where('RoutineDate', $request->RoutineDate)
-            ->where('Status', 1)
-            ->where(function ($q) use ($request) {
+        return DB::table('tblRoutine as ro')->join('tblTeacher as t', 'ro.TeacherID', '=', 't.TeacherID')->join('tblSubject as s', 'ro.SubjectID', '=', 's.SubjectID')->join('tblBatch as b', 'ro.BatchID', '=', 'b.BatchID')->join('tblRoom as r', 'ro.RoomID', '=', 'r.RoomID')->join('tblDevice as d', 'ro.DeviceID', '=', 'd.DeviceID')->select('ro.*', 't.TeacherName', 's.SubjectName', 'b.BatchName', 'b.Semester', 'r.RoomNo', 'd.DeviceName')
+            ->when($request->filled('search'), function ($query) use ($request) { $term = $request->search; $query->where(fn ($q) => $q->where('t.TeacherName','like',"%{$term}%")->orWhere('s.SubjectName','like',"%{$term}%")->orWhere('b.BatchName','like',"%{$term}%")->orWhere('ro.DayName','like',"%{$term}%")); })
+            ->when($request->filled('BatchID'), fn ($q) => $q->where('ro.BatchID', $request->BatchID));
+    }
 
-                $q->where('RoomID', $request->RoomID)
-                    ->orWhere('TeacherID', $request->TeacherID)
-                    ->orWhere('DeviceID', $request->DeviceID);
-            })
-            ->where(function ($q) use ($request) {
+    private function formData(): array
+    {
+        return ['teachers' => DB::table('tblTeacher')->orderBy('TeacherName')->get(), 'subjects' => DB::table('tblSubject')->orderBy('SubjectName')->get(), 'batches' => DB::table('tblBatch')->where('Status', 1)->orderBy('BatchName')->get(), 'rooms' => DB::table('tblRoom')->orderBy('RoomNo')->get(), 'devices' => DB::table('tblDevice')->where('Status', 1)->orderBy('DeviceName')->get(), 'classDays' => self::CLASS_DAYS];
+    }
 
-                $q->where('StartTime', '<', $request->EndTime)
-                    ->where('EndTime', '>', $request->StartTime);
-            });
+    private function validated(Request $request): array
+    {
+        $data = $request->validate(['SemesterStartDate' => 'required|date', 'SemesterEndDate' => 'required|date|after:SemesterStartDate', 'DayName' => 'required|in:Sunday,Monday,Tuesday,Wednesday,Thursday', 'TeacherID' => 'required|exists:tblTeacher,TeacherID', 'ProxyTeacherID' => 'nullable|exists:tblTeacher,TeacherID|different:TeacherID', 'SubjectID' => 'required|exists:tblSubject,SubjectID', 'BatchID' => 'required|exists:tblBatch,BatchID', 'RoomID' => 'required|exists:tblRoom,RoomID', 'DeviceID' => 'required|exists:tblDevice,DeviceID', 'StartTime' => 'required|date_format:H:i', 'EndTime' => 'required|date_format:H:i|after:StartTime', 'ClassType' => 'nullable|string|max:30', 'Remarks' => 'nullable|string', 'Status' => 'required|boolean']);
+        if (Carbon::parse($data['SemesterStartDate'])->diffInMonths(Carbon::parse($data['SemesterEndDate'])) > 6) abort(422, 'A semester routine may not exceed six months.');
+        return $data;
+    }
 
-        if ($ignoreId) {
-            $query->where('RoutineID', '!=', $ignoreId);
-        }
-
-        return $query->exists();
+    private function hasConflict(array $data, ?string $ignoreId = null): bool
+    {
+        $query = DB::table('tblRoutine')->where('Status', 1)->where('DayName', $data['DayName'])->where('SemesterStartDate', '<=', $data['SemesterEndDate'])->where('SemesterEndDate', '>=', $data['SemesterStartDate'])->where(fn ($q) => $q->where('TeacherID', $data['TeacherID'])->orWhere('BatchID', $data['BatchID'])->orWhere('RoomID', $data['RoomID'])->orWhere('DeviceID', $data['DeviceID']))->where('StartTime', '<', $data['EndTime'])->where('EndTime', '>', $data['StartTime']);
+        return ($ignoreId ? $query->where('RoutineID', '!=', $ignoreId) : $query)->exists();
     }
 }

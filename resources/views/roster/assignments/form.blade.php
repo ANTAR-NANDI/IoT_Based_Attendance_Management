@@ -3,17 +3,42 @@
 <div class="max-w-4xl space-y-6">
     <div class="flex justify-between"><div><h1 class="text-2xl font-bold">{{ $assignment ? 'Edit' : 'Add' }} Roster Duty</h1><p class="text-sm text-slate-500">Class Duty uses an exact timetable time. General and security duties use a shift template.</p></div><a href="{{ route('roster.assignments.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-white">Back</a></div>
     @if($errors->any())<div class="rounded border border-red-200 bg-red-50 p-4 text-red-700"><ul class="list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
+    @php($savedWeekdays = old('Weekdays', $assignment?->Weekdays ? json_decode($assignment->Weekdays, true) : []))
     <form method="POST" action="{{ $assignment ? route('roster.assignments.update',$assignment->RosterAssignmentID) : route('roster.assignments.store') }}" class="rounded-xl border bg-white p-6">
         @csrf @if($assignment) @method('PUT') @endif
         <div class="grid gap-5 md:grid-cols-2">
-            <div><label>Start date *</label><input required type="date" name="RosterDate" value="{{ old('RosterDate',$assignment?->RosterDate ?? now()->toDateString()) }}" class="mt-1 w-full rounded border p-2"></div>
+            <div><label>Start date *</label><input required type="date" name="RosterDate" value="{{ old('RosterDate',$assignment?->SeriesStartDate ?? $assignment?->RosterDate ?? now()->toDateString()) }}" class="mt-1 w-full rounded border p-2"></div>
             <div><label>Duty type *</label><select id="assignment-type" name="AssignmentType" class="mt-1 w-full rounded border p-2">@foreach(['General Duty','Class Duty','Exam Duty','Other'] as $type)<option value="{{ $type }}" @selected(old('AssignmentType',$assignment?->AssignmentType ?? 'General Duty') === $type)>{{ $type }}</option>@endforeach</select></div>
-            @if(!$assignment)
-            <div><label>Repeat</label><select name="RepeatMode" class="mt-1 w-full rounded border p-2"><option value="Once">Once only</option><option value="Daily">Every day in date range</option><option value="Weekly">Selected weekdays in date range</option></select></div>
-            <div><label>End date</label><input type="date" name="EndDate" value="{{ old('EndDate') }}" class="mt-1 w-full rounded border p-2"></div>
-            <div class="md:col-span-2"><label>Weekly weekdays</label><div class="mt-2 flex flex-wrap gap-3">@foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $i => $day)<label class="rounded border px-3 py-2"><input type="checkbox" name="Weekdays[]" value="{{ $i }}" @checked(in_array($i, old('Weekdays', [])))> {{ $day }}</label>@endforeach</div></div>
-            @endif
-            <div id="academic-section" class="md:col-span-2 rounded-lg border border-indigo-100 bg-indigo-50 p-4"><div class="mb-3 text-sm font-semibold text-indigo-900">Academic details — required for Class Duty; optional for Exam Duty</div><div class="grid gap-5 md:grid-cols-3"><div><label>Department</label><select name="DepartmentID" class="mt-1 w-full rounded border p-2"><option value="">Select department</option>@foreach($departments as $department)<option value="{{ $department->DepartmentID }}" @selected(old('DepartmentID',$assignment?->DepartmentID) == $department->DepartmentID)>{{ $department->DepartmentName }}</option>@endforeach</select></div><div><label>Batch / session / semester</label><select name="BatchID" class="mt-1 w-full rounded border p-2"><option value="">Select batch</option>@foreach($batches as $batch)<option value="{{ $batch->BatchID }}" @selected(old('BatchID',$assignment?->BatchID) == $batch->BatchID)>{{ $batch->BatchName }} — {{ $batch->Session }}, Sem {{ $batch->Semester }}</option>@endforeach</select></div><div><label>Subject</label><select name="SubjectID" class="mt-1 w-full rounded border p-2"><option value="">Select subject</option>@foreach($subjects as $subject)<option value="{{ $subject->SubjectID }}" @selected(old('SubjectID',$assignment?->SubjectID) == $subject->SubjectID)>{{ $subject->Code }} — {{ $subject->SubjectName }}</option>@endforeach</select></div></div></div>
+            <div><label>Repeat</label><select name="RepeatMode" class="mt-1 w-full rounded border p-2">@foreach(['Once' => 'Once only', 'Daily' => 'Every day in date range', 'Weekly' => 'Selected weekdays in date range'] as $value => $label)<option value="{{ $value }}" @selected(old('RepeatMode',$assignment?->RepeatMode ?? 'Once') === $value)>{{ $label }}</option>@endforeach</select></div>
+            <div><label>End date</label><input type="date" name="EndDate" value="{{ old('EndDate',$assignment?->SeriesEndDate ?? $assignment?->RosterDate) }}" class="mt-1 w-full rounded border p-2"></div>
+            <div class="md:col-span-2"><label>Weekly weekdays</label><div class="mt-2 flex flex-wrap gap-3">@foreach(['Sun','Mon','Tue','Wed','Thu','Fri','Sat'] as $i => $day)<label class="rounded border px-3 py-2"><input type="checkbox" name="Weekdays[]" value="{{ $i }}" @checked(in_array($i, $savedWeekdays))> {{ $day }}</label>@endforeach</div>@if($assignment)<p class="mt-2 text-xs text-slate-500">Saving a repeated routine updates every date in that routine. Older one-day duties are shown as “Once only”.</p>@endif</div>
+            <div id="academic-section" class="md:col-span-2 rounded-lg border border-indigo-100 bg-indigo-50 p-4">
+                <div class="mb-3 text-sm font-semibold text-indigo-900">Academic details — required for Class Duty; optional for Exam Duty</div>
+                <div class="grid gap-5 md:grid-cols-3">
+                    <div>
+                        <label>Department</label>
+                        <select id="department-id" name="DepartmentID" class="mt-1 w-full rounded border p-2">
+                            <option value="">Select department</option>
+                            @foreach($departments as $department)<option value="{{ $department->DepartmentID }}" @selected(old('DepartmentID',$assignment?->DepartmentID) == $department->DepartmentID)>{{ $department->DepartmentName }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label>Batch / session / semester</label>
+                        <select id="batch-id" name="BatchID" class="mt-1 w-full rounded border p-2" disabled>
+                            <option value="">Select department first</option>
+                            @foreach($batches as $batch)<option value="{{ $batch->BatchID }}" data-department-id="{{ $batch->DepartmentID }}" @selected(old('BatchID',$assignment?->BatchID) == $batch->BatchID)>{{ $batch->BatchName }} — {{ $batch->Session }}, Sem {{ $batch->Semester }}</option>@endforeach
+                        </select>
+                    </div>
+                    <div>
+                        <label>Subject</label>
+                        <select id="subject-id" name="SubjectID" class="mt-1 w-full rounded border p-2" disabled>
+                            <option value="">Select department first</option>
+                            @foreach($subjects as $subject)<option value="{{ $subject->SubjectID }}" data-department-id="{{ $subject->DepartmentID }}" @selected(old('SubjectID',$assignment?->SubjectID) == $subject->SubjectID)>{{ $subject->Code }} — {{ $subject->SubjectName }}</option>@endforeach
+                        </select>
+                    </div>
+                </div>
+                <p class="mt-3 text-xs text-indigo-700">Select a department first. Only its batches and subjects will be shown.</p>
+            </div>
             <div id="exact-time-section" class="md:col-span-2 rounded-lg border border-emerald-100 bg-emerald-50 p-4"><div class="mb-3 text-sm font-semibold text-emerald-900">Exact class / exam time — required for Class and Exam Duty</div><div class="grid gap-5 md:grid-cols-2"><div><label>Start time</label><input type="time" name="CustomStartTime" value="{{ old('CustomStartTime',$assignment ? \Carbon\Carbon::parse($assignment->StartTime)->format('H:i') : '') }}" class="mt-1 w-full rounded border p-2"></div><div><label>End time</label><input type="time" name="CustomEndTime" value="{{ old('CustomEndTime',$assignment ? \Carbon\Carbon::parse($assignment->EndTime)->format('H:i') : '') }}" class="mt-1 w-full rounded border p-2"></div></div></div>
             <div><label>Employee *</label><select required name="RosterPersonID" class="mt-1 w-full rounded border p-2"><option value="">Select employee</option>@foreach($people as $person)<option value="{{ $person->RosterPersonID }}" @selected(old('RosterPersonID',$assignment?->RosterPersonID) == $person->RosterPersonID)>{{ $person->PersonName }} — {{ $person->RoleName }}</option>@endforeach</select></div>
             <div><label>Planned proxy</label><select name="ProxyPersonID" class="mt-1 w-full rounded border p-2"><option value="">No planned proxy</option>@foreach($people as $person)<option value="{{ $person->RosterPersonID }}" @selected(old('ProxyPersonID',$assignment?->ProxyPersonID) == $person->RosterPersonID)>{{ $person->PersonName }}</option>@endforeach</select></div>
@@ -30,6 +55,28 @@
     const academicSection = document.getElementById('academic-section');
     const exactTimeSection = document.getElementById('exact-time-section');
     const shiftSection = document.getElementById('shift-section');
+    const departmentSelect = document.getElementById('department-id');
+    const batchSelect = document.getElementById('batch-id');
+    const subjectSelect = document.getElementById('subject-id');
+
+    function filterAcademicOptions(select, placeholder) {
+        const departmentId = departmentSelect.value;
+        const selectedOption = select.options[select.selectedIndex];
+        const selectedDepartment = selectedOption?.dataset?.departmentId;
+        select.disabled = !departmentId;
+        [...select.options].forEach((option, index) => {
+            if (index === 0) return;
+            option.hidden = option.dataset.departmentId !== departmentId;
+            option.disabled = option.dataset.departmentId !== departmentId;
+        });
+        select.options[0].text = departmentId ? placeholder : 'Select department first';
+        if (!departmentId || selectedDepartment !== departmentId) select.value = '';
+    }
+
+    function updateAcademicFields() {
+        filterAcademicOptions(batchSelect, 'Select batch');
+        filterAcademicOptions(subjectSelect, 'Select subject');
+    }
     function updateDutyFields() {
         const academic = ['Class Duty', 'Exam Duty'].includes(assignmentType.value);
         academicSection.classList.toggle('hidden', !academic);
@@ -37,6 +84,8 @@
         shiftSection.classList.toggle('hidden', academic);
     }
     assignmentType.addEventListener('change', updateDutyFields);
+    departmentSelect.addEventListener('change', updateAcademicFields);
     updateDutyFields();
+    updateAcademicFields();
 </script>
 @endsection

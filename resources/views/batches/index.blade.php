@@ -76,6 +76,10 @@
                         </th>
 
                         <th class="px-4 py-3 text-left text-xs font-bold uppercase">
+                            Department
+                        </th>
+
+                        <th class="px-4 py-3 text-left text-xs font-bold uppercase">
                             Session
                         </th>
 
@@ -107,6 +111,10 @@
 
                         <td class="px-4 py-3 font-semibold">
                             {{ $batch->BatchName }}
+                        </td>
+
+                        <td class="px-4 py-3">
+                            {{ $batch->DepartmentName ?? 'Not assigned' }}
                         </td>
 
                         <td class="px-4 py-3">

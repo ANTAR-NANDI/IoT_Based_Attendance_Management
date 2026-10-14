@@ -13,20 +13,23 @@ class BatchController extends Controller
      */
     public function index(Request $request)
     {
-        $query = DB::table('tblBatch');
+        $query = DB::table('tblBatch as b')
+            ->leftJoin('tblDepartment as d', 'b.DepartmentID', '=', 'd.DepartmentID')
+            ->select('b.*', 'd.DepartmentName');
 
         if ($request->filled('search')) {
 
             $query->where(function ($q) use ($request) {
 
-                $q->where('BatchName', 'like', "%{$request->search}%")
-                    ->orWhere('Session', 'like', "%{$request->search}%")
-                    ->orWhere('Semester', 'like', "%{$request->search}%");
+                $q->where('b.BatchName', 'like', "%{$request->search}%")
+                    ->orWhere('b.Session', 'like', "%{$request->search}%")
+                    ->orWhere('b.Semester', 'like', "%{$request->search}%")
+                    ->orWhere('d.DepartmentName', 'like', "%{$request->search}%");
             });
         }
 
         $batches = $query
-            ->orderByDesc('BatchID')
+            ->orderByDesc('b.BatchID')
             ->paginate(20);
 
         return view('batches.index', compact('batches'));
@@ -37,7 +40,8 @@ class BatchController extends Controller
      */
     public function create()
     {
-        return view('batches.create');
+        $departments = DB::table('tblDepartment')->orderBy('DepartmentName')->get();
+        return view('batches.create', compact('departments'));
     }
 
     /**
@@ -52,6 +56,7 @@ class BatchController extends Controller
             'Session' => 'required|max:30',
 
             'Semester' => 'required|integer|min:1|max:12',
+            'DepartmentID' => 'required|exists:tblDepartment,DepartmentID',
 
         ]);
 
@@ -60,6 +65,8 @@ class BatchController extends Controller
             DB::table('tblBatch')->insert([
 
                 'BatchName' => $request->BatchName,
+
+                'DepartmentID' => $request->DepartmentID,
 
                 'Session' => $request->Session,
 
@@ -98,7 +105,8 @@ class BatchController extends Controller
             abort(404);
         }
 
-        return view('batches.edit', compact('batch'));
+        $departments = DB::table('tblDepartment')->orderBy('DepartmentName')->get();
+        return view('batches.edit', compact('batch', 'departments'));
     }
 
     /**
@@ -113,6 +121,7 @@ class BatchController extends Controller
             'Session' => 'required|max:30',
 
             'Semester' => 'required|integer|min:1|max:12',
+            'DepartmentID' => 'required|exists:tblDepartment,DepartmentID',
 
         ]);
 
@@ -123,6 +132,8 @@ class BatchController extends Controller
                 ->update([
 
                     'BatchName' => $request->BatchName,
+
+                    'DepartmentID' => $request->DepartmentID,
 
                     'Session' => $request->Session,
 

@@ -48,6 +48,16 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+                    <div>
+                        <label class="block font-semibold mb-2">Department</label>
+                        <select name="DepartmentID" required class="w-full border rounded-lg px-4 py-2">
+                            <option value="">Select Department</option>
+                            @foreach($departments as $department)
+                                <option value="{{ $department->DepartmentID }}" @selected(old('DepartmentID', $batch->DepartmentID) == $department->DepartmentID)>{{ $department->DepartmentName }}</option>
+                            @endforeach
+                        </select>
+                    </div>
+
                     <!-- Batch Name -->
                     <div>
 

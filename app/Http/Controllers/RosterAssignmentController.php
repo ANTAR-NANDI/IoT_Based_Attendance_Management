@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class RosterAssignmentController extends Controller
@@ -27,12 +28,21 @@ class RosterAssignmentController extends Controller
     {
         $data = $this->assignmentData($request);
         $dates = $this->datesFor($request);
+        $recurrence = $this->recurrenceData($request);
         foreach ($dates as $date) {
-            $candidate = $data + ['RosterDate' => $date];
+            $candidate = array_merge($data, ['RosterDate' => $date]);
             if ($this->conflicts($candidate)) return back()->withInput()->withErrors(['RosterPersonID' => "Schedule conflict on {$date}. This person already has an overlapping duty."]);
         }
-        DB::transaction(function () use ($data, $dates) {
-            foreach ($dates as $date) DB::table('tblRosterAssignment')->insert($data + ['RosterDate' => $date, 'created_at' => now(), 'updated_at' => now()]);
+        $seriesId = (string) Str::uuid();
+        DB::transaction(function () use ($data, $dates, $recurrence, $seriesId) {
+            foreach ($dates as $date) {
+                DB::table('tblRosterAssignment')->insert(array_merge($data, $recurrence, [
+                    'RosterSeriesID' => $seriesId,
+                    'RosterDate' => $date,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]));
+            }
         });
         return redirect()->route('roster.assignments.index', ['month' => Carbon::parse($dates[0])->format('Y-m')])->with('success', count($dates).' roster duty/duties added.');
     }
@@ -45,9 +55,40 @@ class RosterAssignmentController extends Controller
 
     public function update(Request $request, int $id)
     {
+        $assignment = DB::table('tblRosterAssignment')->where('RosterAssignmentID', $id)->firstOrFail();
         $data = $this->assignmentData($request);
-        if ($this->conflicts($data, $id)) return back()->withInput()->withErrors(['RosterPersonID' => 'This person already has an overlapping class or roster shift.']);
-        DB::table('tblRosterAssignment')->where('RosterAssignmentID', $id)->update($data + ['updated_at' => now()]);
+        $dates = $this->datesFor($request);
+        $recurrence = $this->recurrenceData($request);
+        $isSeriesEdit = !empty($assignment->RosterSeriesID) || count($dates) > 1 || $recurrence['RepeatMode'] !== 'Once';
+
+        foreach ($dates as $date) {
+            $candidate = array_merge($data, ['RosterDate' => $date]);
+            if ($this->conflicts($candidate, $assignment->RosterSeriesID ? null : $id, $assignment->RosterSeriesID)) {
+                return back()->withInput()->withErrors(['RosterPersonID' => "Schedule conflict on {$date}. This person already has an overlapping duty."]);
+            }
+        }
+
+        if ($isSeriesEdit) {
+            $seriesId = $assignment->RosterSeriesID ?: (string) Str::uuid();
+            DB::transaction(function () use ($assignment, $data, $dates, $recurrence, $seriesId) {
+                if ($assignment->RosterSeriesID) {
+                    DB::table('tblRosterAssignment')->where('RosterSeriesID', $assignment->RosterSeriesID)->delete();
+                } else {
+                    DB::table('tblRosterAssignment')->where('RosterAssignmentID', $assignment->RosterAssignmentID)->delete();
+                }
+                foreach ($dates as $date) {
+                    DB::table('tblRosterAssignment')->insert(array_merge($data, $recurrence, [
+                        'RosterSeriesID' => $seriesId,
+                        'RosterDate' => $date,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]));
+                }
+            });
+            return redirect()->route('roster.assignments.index', ['month' => Carbon::parse($dates[0])->format('Y-m')])->with('success', 'Entire roster routine updated.');
+        }
+
+        DB::table('tblRosterAssignment')->where('RosterAssignmentID', $id)->update(array_merge($data, ['updated_at' => now()]));
         return redirect()->route('roster.assignments.index', ['month' => Carbon::parse($data['RosterDate'])->format('Y-m')])->with('success', 'Roster duty updated.');
     }
 
@@ -100,6 +141,8 @@ class RosterAssignmentController extends Controller
             if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact class start and end time.']);
             $subjectDepartment = DB::table('tblSubject')->where('SubjectID', $input['SubjectID'])->value('DepartmentID');
             if ((int) $subjectDepartment !== (int) $input['DepartmentID']) throw \Illuminate\Validation\ValidationException::withMessages(['SubjectID' => 'The subject must belong to the selected department.']);
+            $batchDepartment = DB::table('tblBatch')->where('BatchID', $input['BatchID'])->value('DepartmentID');
+            if ((int) $batchDepartment !== (int) $input['DepartmentID']) throw \Illuminate\Validation\ValidationException::withMessages(['BatchID' => 'The batch must belong to the selected department.']);
         } elseif ($input['AssignmentType'] === 'Exam Duty') {
             if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact exam start and end time.']);
         } elseif (empty($input['RosterShiftID'])) {
@@ -135,13 +178,30 @@ class RosterAssignmentController extends Controller
         return $dates;
     }
 
-    private function conflicts(array $data, ?int $ignoreId = null): bool
+    private function recurrenceData(Request $request): array
+    {
+        $start = Carbon::parse($request->RosterDate)->toDateString();
+        $end = $request->filled('EndDate') ? Carbon::parse($request->EndDate)->toDateString() : $start;
+        $weekdays = collect($request->input('Weekdays', []))->map(fn ($day) => (int) $day)->values()->all();
+
+        return [
+            'SeriesStartDate' => $start,
+            'SeriesEndDate' => $end,
+            'RepeatMode' => $request->input('RepeatMode', 'Once'),
+            'Weekdays' => $weekdays ? json_encode($weekdays) : null,
+        ];
+    }
+
+    private function conflicts(array $data, ?int $ignoreId = null, ?string $ignoreSeriesId = null): bool
     {
         if ($data['Status'] !== 'Active') return false;
         [$candidateStart, $candidateEnd] = $this->times($data);
         $existing = DB::table('tblRosterAssignment')->where('RosterPersonID', $data['RosterPersonID'])->where('Status', 'Active')
             ->whereBetween('RosterDate', [$candidateStart->copy()->subDay()->toDateString(), $candidateEnd->toDateString()])
-            ->when($ignoreId, fn ($q) => $q->where('RosterAssignmentID', '!=', $ignoreId))->get();
+            ->when($ignoreId, fn ($q) => $q->where('RosterAssignmentID', '!=', $ignoreId))
+            ->when($ignoreSeriesId, fn ($q) => $q->where(function ($seriesQuery) use ($ignoreSeriesId) {
+                $seriesQuery->whereNull('RosterSeriesID')->orWhere('RosterSeriesID', '!=', $ignoreSeriesId);
+            }))->get();
         foreach ($existing as $row) {
             [$start, $end] = $this->times((array) $row);
             if ($candidateStart->lt($end) && $candidateEnd->gt($start)) return true;

@@ -101,7 +101,11 @@ class AttendanceLogController extends Controller
             ->join('tblBatch as b', 'ro.BatchID', '=', 'b.BatchID')
             ->join('tblRoom as r', 'ro.RoomID', '=', 'r.RoomID')
             ->select('ro.*', 't.TeacherName', 't.ZKUserID', 'pt.TeacherName as ProxyTeacherName', 'pt.ZKUserID as ProxyTeacherZKUserID', 's.SubjectName', 'b.BatchName', 'r.RoomNo')
-            ->whereBetween('ro.RoutineDate', [$fromDate, $toDate])
+            // A routine is a weekly semester template, not a separate row for
+            // each calendar date. Fetch every template that intersects the
+            // report period, then expand its matching weekdays below.
+            ->where('ro.SemesterStartDate', '<=', $toDate)
+            ->where('ro.SemesterEndDate', '>=', $fromDate)
             ->where('ro.Status', 1);
 
         if ($request->filled('TeacherID')) {
@@ -111,7 +115,23 @@ class AttendanceLogController extends Controller
             $routineQuery->where('ro.BatchID', $request->BatchID);
         }
 
-        $routines = $routineQuery->orderBy('ro.RoutineDate')->orderBy('ro.StartTime')->get();
+        $templates = $routineQuery->orderBy('ro.StartTime')->get();
+        $routines = $templates->flatMap(function ($template) use ($fromDate, $toDate) {
+            $start = Carbon::parse($template->SemesterStartDate)->max(Carbon::parse($fromDate));
+            $end = Carbon::parse($template->SemesterEndDate)->min(Carbon::parse($toDate));
+            $occurrences = collect();
+
+            while ($start->lte($end)) {
+                if ($start->format('l') === $template->DayName) {
+                    $occurrence = clone $template;
+                    $occurrence->RoutineDate = $start->toDateString();
+                    $occurrences->push($occurrence);
+                }
+                $start->addDay();
+            }
+
+            return $occurrences;
+        })->sortBy([['RoutineDate', 'asc'], ['StartTime', 'asc']])->values();
         if ($routines->isEmpty()) {
             return [collect(), collect(), $fromDate, $toDate];
         }

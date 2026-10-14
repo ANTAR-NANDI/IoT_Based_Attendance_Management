@@ -19,14 +19,14 @@
     <table>
         <thead>
             <tr>
-                <th>#</th><th>Date / Day</th><th>Time</th><th>Teacher</th><th>Subject</th><th>Batch</th><th>Room / Device</th><th>Status</th>
+                <th>#</th><th>Day / Semester dates</th><th>Time</th><th>Teacher</th><th>Subject</th><th>Batch</th><th>Room / Device</th><th>Status</th>
             </tr>
         </thead>
         <tbody>
             @forelse($routines as $routine)
                 <tr>
                     <td class="center">{{ $loop->iteration }}</td>
-                    <td>{{ \Carbon\Carbon::parse($routine->RoutineDate)->format('d M Y') }}<div class="muted">{{ $routine->DayName }}</div></td>
+                    <td>{{ $routine->DayName }}<div class="muted">{{ \Carbon\Carbon::parse($routine->SemesterStartDate ?? $routine->RoutineDate)->format('d M Y') }} – {{ \Carbon\Carbon::parse($routine->SemesterEndDate ?? $routine->RoutineDate)->format('d M Y') }}</div></td>
                     <td>{{ \Carbon\Carbon::parse($routine->StartTime)->format('h:i A') }} - {{ \Carbon\Carbon::parse($routine->EndTime)->format('h:i A') }}<div class="muted">{{ $routine->ClassType ?: 'Class' }}</div></td>
                     <td>{{ $routine->TeacherName }}</td>
                     <td>{{ $routine->SubjectName }}</td>

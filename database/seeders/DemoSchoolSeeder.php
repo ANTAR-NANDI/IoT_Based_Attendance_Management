@@ -46,6 +46,7 @@ class DemoSchoolSeeder extends Seeder
             ['EmployeeID' => 'EMP-1004', 'TeacherName' => 'Nusrat Jahan', 'DepartmentCode' => 'EEE', 'DesignationName' => 'Lecturer', 'Mobile' => '01711000004', 'Email' => 'nusrat.jahan@example.test', 'ZKUserID' => 1004],
             ['EmployeeID' => 'EMP-1005', 'TeacherName' => 'Md. Kamal Hossain', 'DepartmentCode' => 'BBA', 'DesignationName' => 'Associate Professor', 'Mobile' => '01711000005', 'Email' => 'kamal.hossain@example.test', 'ZKUserID' => 1005],
             ['EmployeeID' => 'EMP-1006', 'TeacherName' => 'Sharmeen Sultana', 'DepartmentCode' => 'ENG', 'DesignationName' => 'Lecturer', 'Mobile' => '01711000006', 'Email' => 'sharmeen.sultana@example.test', 'ZKUserID' => 1006],
+            ['EmployeeID' => 'EMP-1007', 'TeacherName' => 'Tanvir Ahmed', 'DepartmentCode' => 'CSE', 'DesignationName' => 'Lecturer', 'Mobile' => '01711000007', 'Email' => 'tanvir.ahmed@example.test', 'ZKUserID' => 1007],
         ];
 
         foreach ($teachers as $teacher) {
