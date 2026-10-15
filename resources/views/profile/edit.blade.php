@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'My Profile | Sanjibani Admin')
+@section('title', 'My Profile | ZKT Attendance System')
 
 @section('content')
 <div class="mx-auto max-w-3xl space-y-6">

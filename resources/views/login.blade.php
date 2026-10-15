@@ -5,10 +5,10 @@
     
     <div class="hidden lg:flex lg:w-[52%] bg-gradient-to-br from-[#071735] via-[#102957] to-[#173b72] justify-center items-center p-16 text-white relative overflow-hidden">
         <div class="z-10 max-w-lg space-y-7">
-            <div class="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-2xl shadow-xl shadow-blue-500/30">S</div>
+            <div class="h-14 w-14 rounded-2xl bg-blue-600 flex items-center justify-center font-black text-xl shadow-xl shadow-blue-500/30">ZKT</div>
             <div class="space-y-2">
-                <p class="text-xs font-bold uppercase tracking-[0.22em] text-blue-200">Sanjibani Army University</p>
-                <h1 class="text-4xl font-black tracking-tight leading-tight">Duty Roster &<br>Biometric Attendance</h1>
+                <p class="text-xs font-bold uppercase tracking-[0.22em] text-blue-200">University Administration Portal</p>
+                <h1 class="text-4xl font-black tracking-tight leading-tight">ZKT Attendance<br>System</h1>
                 <p class="text-blue-100/70 text-base leading-relaxed">A secure control centre for duty scheduling, guard rotation and verified biometric attendance.</p>
             </div>
             <div class="inline-flex items-center space-x-3 text-xs text-blue-100 bg-blue-950/35 p-4 rounded-xl border border-blue-400/20 backdrop-blur-sm">
@@ -26,7 +26,7 @@
     <div class="flex flex-1 items-center justify-center p-8 sm:p-16 bg-slate-50">
         <div class="w-full max-w-sm space-y-8">
             <div class="space-y-2">
-                <div class="mb-8 flex items-center gap-3 lg:hidden"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 font-black text-white">S</div><span class="font-bold text-slate-900">Sanjibani Admin</span></div>
+                <div class="mb-8 flex items-center gap-3 lg:hidden"><div class="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-xs font-black text-white">ZKT</div><span class="font-bold text-slate-900">ZKT Attendance System</span></div>
                 <h2 class="text-3xl font-black text-slate-950 tracking-tight">Administrator Login</h2>
                 <p class="text-sm text-slate-500">Sign in with your authorized administrator account.</p>
             </div>

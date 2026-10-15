@@ -1,6 +1,6 @@
 @extends('layouts.master')
 
-@section('title', 'Forgot password | Sanjibani Admin')
+@section('title', 'Forgot password | ZKT Attendance System')
 
 @section('content')
 <div class="w-full min-h-screen bg-slate-50 flex items-center justify-center p-6">

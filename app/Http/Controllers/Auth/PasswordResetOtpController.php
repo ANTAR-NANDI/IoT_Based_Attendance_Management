@@ -50,8 +50,8 @@ class PasswordResetOtpController extends Controller
 
             try {
                 Mail::raw(
-                    "Your Sanjibani Admin password reset code is: {$otp}\n\nThis code expires in ".self::OTP_LIFETIME_MINUTES." minutes. Do not share it with anyone.",
-                    fn ($message) => $message->to($user->email, $user->name)->subject('Your Sanjibani password reset code')
+                    "Your ZKT Attendance System password reset code is: {$otp}\n\nThis code expires in ".self::OTP_LIFETIME_MINUTES." minutes. Do not share it with anyone.",
+                    fn ($message) => $message->to($user->email, $user->name)->subject('Your ZKT Attendance System password reset code')
                 );
             } catch (\Throwable $exception) {
                 report($exception);
