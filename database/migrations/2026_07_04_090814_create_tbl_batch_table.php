@@ -19,7 +19,7 @@ return new class extends Migration
 
             $table->string('Session', 30);
 
-            $table->unsignedTinyInteger('Semester');
+            $table->string('Semester', 30);
 
             $table->boolean('Status')->default(1);
 

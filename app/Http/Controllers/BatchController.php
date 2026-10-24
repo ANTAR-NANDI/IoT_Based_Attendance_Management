@@ -55,7 +55,7 @@ class BatchController extends Controller
 
             'Session' => 'required|max:30',
 
-            'Semester' => 'required|integer|min:1|max:12',
+            'Semester' => 'required|string|max:30',
             'DepartmentID' => 'required|exists:tblDepartment,DepartmentID',
 
         ]);
@@ -120,7 +120,7 @@ class BatchController extends Controller
 
             'Session' => 'required|max:30',
 
-            'Semester' => 'required|integer|min:1|max:12',
+            'Semester' => 'required|string|max:30',
             'DepartmentID' => 'required|exists:tblDepartment,DepartmentID',
 
         ]);

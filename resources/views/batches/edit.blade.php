@@ -97,26 +97,14 @@
                             Semester
                         </label>
 
-                        <select
+                        <input
+                            type="text"
                             name="Semester"
+                            value="{{ old('Semester', $batch->Semester) }}"
+                            maxlength="30"
                             required
+                            placeholder="e.g. L4-T2"
                             class="w-full border rounded-lg px-4 py-2">
-
-                            <option value="">Select Semester</option>
-
-                            @for($i = 1; $i <= 12; $i++)
-
-                                <option
-                                    value="{{ $i }}"
-                                    {{ old('Semester', $batch->Semester) == $i ? 'selected' : '' }}>
-
-                                    Semester {{ $i }}
-
-                                </option>
-
-                            @endfor
-
-                        </select>
 
                     </div>
 

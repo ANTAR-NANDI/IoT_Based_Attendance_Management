@@ -6,6 +6,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Arr;
 use Illuminate\Validation\Rule;
 
 class RosterPersonController extends Controller
@@ -56,7 +57,7 @@ class RosterPersonController extends Controller
     private function validated(Request $request, $person = null): array
     {
         $account = $person ? User::where('RosterPersonID', $person->RosterPersonID)->first() : null;
-        return $request->validate([
+        $data = $request->validate([
             'EmployeeCode' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'EmployeeCode')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'PersonName' => ['required', 'max:150'],
             'DepartmentID' => ['required', 'exists:tblDepartment,DepartmentID'],
@@ -66,7 +67,14 @@ class RosterPersonController extends Controller
             'Status' => ['required', 'boolean'],
             'AccountEmail' => ['nullable', 'email', Rule::unique('users', 'email')->ignore($account?->id)],
             'AccountPassword' => [$account ? 'nullable' : 'required_with:AccountEmail', 'nullable', 'string', 'min:8', 'confirmed'],
-        ]) + $this->names($request) + ['RunsRoster' => $request->WorkMode !== 'Normal'];
+        ]);
+
+        // Account credentials are stored in the users table, never on the
+        // roster-person record. Keeping them out of this payload also avoids
+        // inserting an unhashed password into the roster table.
+        return Arr::except($data, ['AccountEmail', 'AccountPassword', 'AccountPassword_confirmation'])
+            + $this->names($request)
+            + ['RunsRoster' => $request->WorkMode !== 'Normal'];
     }
 
     private function saveEmployeeAccount(Request $request, int $personId): void

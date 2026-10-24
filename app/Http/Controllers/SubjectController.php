@@ -52,7 +52,9 @@ class SubjectController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'Code' => 'required|max:20|unique:tblSubject,Code',
+            // A subject can be offered in more than one section (for example,
+            // Sec A and Sec B), so its course code is not globally unique.
+            'Code' => 'required|max:20',
             'SubjectName' => 'required|max:150',
             'DepartmentID' => 'required'
         ]);
@@ -110,7 +112,8 @@ class SubjectController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'Code' => 'required|max:20|unique:tblSubject,Code,' . $id . ',SubjectID',
+            // Keep duplicate course codes valid for separately listed sections.
+            'Code' => 'required|max:20',
             'SubjectName' => 'required|max:150',
             'DepartmentID' => 'required'
         ]);
