@@ -3,9 +3,6 @@
     @php
         $menu = Auth::user()->isAdmin() ? [
             ['route' => 'dashboard', 'label' => 'Dashboard'],
-            ['route' => 'profile.edit', 'label' => 'My Profile'],
-            ['heading' => 'ZKT Setup'],
-            ['route' => 'devices.index', 'label' => 'ZKT Devices'],
             ['heading' => 'Roster Setup'],
             ['route' => 'departments.index', 'label' => 'Departments'],
             ['route' => 'designations.index', 'label' => 'Designations'],
@@ -36,4 +33,7 @@
             @endif
         @endforeach
     </nav>
+    <div class="shrink-0 border-t border-slate-800/80 p-3">
+        <a href="{{ route('profile.edit') }}" class="block rounded-lg px-4 py-2.5 text-sm font-medium {{ request()->routeIs('profile.edit') ? 'bg-indigo-600/20 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">My Profile</a>
+    </div>
 </aside>

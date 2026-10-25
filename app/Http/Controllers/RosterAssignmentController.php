@@ -104,8 +104,12 @@ class RosterAssignmentController extends Controller
             'assignment' => $assignment,
             'people' => DB::table('tblRosterPerson')->where('Status', 1)->orderBy('PersonName')->get(),
             'shifts' => DB::table('tblRosterShift')->where('Status', 1)->orderBy('StartTime')->get(),
-            'locations' => DB::table('tblRosterLocation')->where('Status', 1)->orderBy('LocationName')->get(),
-            'devices' => DB::table('tblDevice')->where('Status', 1)->orderBy('DeviceName')->get(),
+            'locations' => DB::table('tblRosterLocation as l')
+                ->leftJoin('tblDevice as d', 'l.DeviceID', '=', 'd.DeviceID')
+                ->where('l.Status', 1)
+                ->select('l.*', 'd.DeviceName', 'd.Status as DeviceStatus')
+                ->orderBy('l.LocationName')
+                ->get(),
             'departments' => DB::table('tblDepartment')->orderBy('DepartmentName')->get(),
             'batches' => DB::table('tblBatch')->where('Status', 1)->orderBy('BatchName')->get(),
             'subjects' => DB::table('tblSubject')->orderBy('SubjectName')->get(),
@@ -126,16 +130,15 @@ class RosterAssignmentController extends Controller
             'CustomStartTime' => ['nullable', 'date_format:H:i'],
             'CustomEndTime' => ['nullable', 'date_format:H:i'],
             'RosterLocationID' => ['nullable', 'exists:tblRosterLocation,RosterLocationID'],
-            'DeviceID' => ['nullable', 'exists:tblDevice,DeviceID'],
             'AssignmentType' => ['required', Rule::in(['General Duty', 'Class Duty', 'Exam Duty', 'Other'])],
             'DepartmentID' => ['nullable', 'exists:tblDepartment,DepartmentID'],
             'BatchID' => ['nullable', 'exists:tblBatch,BatchID'],
             'SubjectID' => ['nullable', 'exists:tblSubject,SubjectID'],
-            'Status' => ['required', Rule::in(['Active', 'Cancelled'])],
+            'Status' => ['required', Rule::in(['Active', 'Cancelled', 'Hold'])],
             'Remarks' => ['nullable', 'max:255'],
         ]);
         if ($input['AssignmentType'] === 'Class Duty') {
-            foreach (['DepartmentID' => 'department', 'BatchID' => 'batch', 'SubjectID' => 'subject'] as $field => $label) {
+            foreach (['DepartmentID' => 'department', 'BatchID' => 'batch', 'SubjectID' => 'subject', 'RosterLocationID' => 'room'] as $field => $label) {
                 if (empty($input[$field])) throw \Illuminate\Validation\ValidationException::withMessages([$field => "Select the class {$label}."]);
             }
             if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact class start and end time.']);
@@ -147,6 +150,18 @@ class RosterAssignmentController extends Controller
             if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact exam start and end time.']);
         } elseif (empty($input['RosterShiftID'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['RosterShiftID' => 'Select a shift template for a general, exam, or other duty.']);
+        }
+
+        // The attendance terminal belongs to the selected room.  Never trust
+        // a device ID posted by the browser for a routine.
+        $input['DeviceID'] = null;
+        if (!empty($input['RosterLocationID'])) {
+            $deviceId = DB::table('tblRosterLocation')->where('RosterLocationID', $input['RosterLocationID'])->value('DeviceID');
+            $deviceIsActive = $deviceId && DB::table('tblDevice')->where('DeviceID', $deviceId)->where('Status', 1)->exists();
+            if (!$deviceIsActive && $input['AssignmentType'] === 'Class Duty') {
+                throw \Illuminate\Validation\ValidationException::withMessages(['RosterLocationID' => 'This room has no active ZKT device. Add or activate its device in Room Setup first.']);
+            }
+            $input['DeviceID'] = $deviceIsActive ? $deviceId : null;
         }
         unset($input['EndDate'], $input['RepeatMode'], $input['Weekdays']);
         $shift = !empty($input['RosterShiftID']) ? DB::table('tblRosterShift')->where('RosterShiftID', $input['RosterShiftID'])->firstOrFail() : null;
@@ -196,8 +211,11 @@ class RosterAssignmentController extends Controller
     {
         if ($data['Status'] !== 'Active') return false;
         [$candidateStart, $candidateEnd] = $this->times($data);
+        $assignmentDate = $data['RosterDate'];
         $existing = DB::table('tblRosterAssignment')->where('RosterPersonID', $data['RosterPersonID'])->where('Status', 'Active')
-            ->whereBetween('RosterDate', [$candidateStart->copy()->subDay()->toDateString(), $candidateEnd->toDateString()])
+            // A roster date is a calendar day: 12:00 AM through 11:59 PM.
+            // A Sunday duty must not cause a conflict for a Monday duty.
+            ->whereDate('RosterDate', $assignmentDate)
             ->when($ignoreId, fn ($q) => $q->where('RosterAssignmentID', '!=', $ignoreId))
             ->when($ignoreSeriesId, fn ($q) => $q->where(function ($seriesQuery) use ($ignoreSeriesId) {
                 $seriesQuery->whereNull('RosterSeriesID')->orWhere('RosterSeriesID', '!=', $ignoreSeriesId);
@@ -212,14 +230,27 @@ class RosterAssignmentController extends Controller
         // own module, but participate in roster conflict validation.
         $person = DB::table('tblRosterPerson')->where('RosterPersonID', $data['RosterPersonID'])->first();
         if ($person?->SourceTeacherID) {
+            // tblRoutine stores a weekly template. Match the selected weekday
+            // and the candidate's calendar date only.
+            $classDate = Carbon::parse($assignmentDate);
             $classes = DB::table('tblRoutine')
                 ->where('TeacherID', $person->SourceTeacherID)
                 ->where('Status', 1)
-                ->whereBetween('RoutineDate', [$candidateStart->toDateString(), $candidateEnd->toDateString()])
+                ->where('DayName', $classDate->format('l'))
+                ->where(function ($query) use ($assignmentDate) {
+                    $query->where(function ($semester) use ($assignmentDate) {
+                        $semester->where('SemesterStartDate', '<=', $assignmentDate)
+                            ->where('SemesterEndDate', '>=', $assignmentDate);
+                    })->orWhere(function ($legacy) use ($assignmentDate) {
+                        $legacy->whereNull('SemesterStartDate')
+                            ->whereDate('RoutineDate', $assignmentDate);
+                    });
+                })
                 ->get();
+
             foreach ($classes as $class) {
-                $classStart = Carbon::parse($class->RoutineDate.' '.$class->StartTime);
-                $classEnd = Carbon::parse($class->RoutineDate.' '.$class->EndTime);
+                $classStart = Carbon::parse($assignmentDate.' '.$class->StartTime);
+                $classEnd = Carbon::parse($assignmentDate.' '.$class->EndTime);
                 if ($candidateStart->lt($classEnd) && $candidateEnd->gt($classStart)) return true;
             }
         }
@@ -230,7 +261,10 @@ class RosterAssignmentController extends Controller
     {
         $start = Carbon::parse($row['RosterDate'].' '.$row['StartTime']);
         $end = Carbon::parse($row['RosterDate'].' '.$row['EndTime']);
-        if ($row['CrossesMidnight'] || $end->lessThanOrEqualTo($start)) $end->addDay();
+        // Only an explicitly overnight duty continues onto the next calendar
+        // day. A same-day class with an incorrect time value must not block
+        // the teacher's following day.
+        if ($row['CrossesMidnight']) $end->addDay();
         return [$start, $end];
     }
 

@@ -23,7 +23,7 @@
                 <input type="date" name="report_date" value="{{ $reportDate }}" class="mt-1 w-full rounded border p-2">
             </div>
             <div>
-                <label class="text-xs font-semibold">Rooms / duty posts</label>
+                <label class="text-xs font-semibold">Room No.</label>
                 <select required id="room-selector" name="RosterLocationIDs[]" multiple class="mt-1 w-full rounded border p-2">
                     @foreach($locations as $item)
                         <option value="{{ $item->RosterLocationID }}" {{ $locationIds->contains((int) $item->RosterLocationID) ? 'selected' : '' }}>{{ $item->LocationName }}</option>
