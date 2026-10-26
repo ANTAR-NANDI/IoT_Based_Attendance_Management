@@ -53,6 +53,8 @@ Route::middleware('auth')->group(function () {
     Route::get('dashboard/roster/settings', [RosterSettingController::class, 'edit'])->name('roster.settings.edit');
     Route::put('dashboard/roster/settings', [RosterSettingController::class, 'update'])->name('roster.settings.update');
     Route::resource('dashboard/roster/assignments', RosterAssignmentController::class)->except('show')->names('roster.assignments');
+    Route::get('dashboard/roster/assignments/multiple/create', [RosterAssignmentController::class, 'createMultiple'])->name('roster.assignments.create-multiple');
+    Route::post('dashboard/roster/assignments/multiple', [RosterAssignmentController::class, 'storeMultiple'])->name('roster.assignments.store-multiple');
     Route::get('dashboard/roster/security-rotation', [RosterRotationController::class, 'create'])->name('roster.rotation.create');
     Route::post('dashboard/roster/security-rotation', [RosterRotationController::class, 'store'])->name('roster.rotation.store');
     Route::get('dashboard/reports/roster-attendance', [RosterReportController::class, 'index'])->name('reports.roster-attendance');

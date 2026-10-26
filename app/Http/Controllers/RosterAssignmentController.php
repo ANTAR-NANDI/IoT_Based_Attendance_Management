@@ -24,6 +24,46 @@ class RosterAssignmentController extends Controller
         return view('roster.assignments.form', $this->formData());
     }
 
+    public function createMultiple()
+    {
+        return view('roster.assignments.multiple', $this->formData());
+    }
+
+    public function storeMultiple(Request $request)
+    {
+        $rows = $this->multipleClassData($request);
+        $dates = $this->datesFor($request);
+        $recurrence = $this->recurrenceData($request);
+
+        foreach ($dates as $date) {
+            $scheduled = [];
+            foreach ($rows as $row) {
+                $candidate = $row + ['RosterDate' => $date];
+                if ($this->conflicts($candidate) || $this->conflictsWithBatch($candidate, $scheduled)) {
+                    return back()->withInput()->withErrors(['RoutineRows' => "Schedule conflict on {$date}. A teacher is already assigned during one of these class times."]);
+                }
+                $scheduled[] = $candidate;
+            }
+        }
+
+        DB::transaction(function () use ($rows, $dates, $recurrence) {
+            foreach ($rows as $row) {
+                $seriesId = (string) Str::uuid();
+                foreach ($dates as $date) {
+                    DB::table('tblRosterAssignment')->insert($row + $recurrence + [
+                        'RosterSeriesID' => $seriesId,
+                        'RosterDate' => $date,
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                }
+            }
+        });
+
+        return redirect()->route('roster.assignments.index', ['month' => Carbon::parse($dates[0])->format('Y-m')])
+            ->with('success', count($rows).' class routine(s) added for '.count($dates).' date(s).');
+    }
+
     public function store(Request $request)
     {
         $data = $this->assignmentData($request);
@@ -178,6 +218,69 @@ class RosterAssignmentController extends Controller
         ];
     }
 
+    private function multipleClassData(Request $request): array
+    {
+        $input = $request->validate([
+            'RosterDate' => ['required', 'date'],
+            'EndDate' => ['nullable', 'date', 'after_or_equal:RosterDate'],
+            'RepeatMode' => ['nullable', Rule::in(['Once', 'Daily', 'Weekly'])],
+            'Weekdays' => ['nullable', 'array'],
+            'Weekdays.*' => ['integer', 'between:0,6'],
+            'Status' => ['required', Rule::in(['Active', 'Cancelled', 'Hold'])],
+            'StartTime' => ['required', 'date_format:H:i'],
+            'EndTime' => ['required', 'date_format:H:i'],
+            'RoutineRows' => ['required', 'array', 'min:1'],
+            'RoutineRows.*.DepartmentID' => ['required', 'exists:tblDepartment,DepartmentID'],
+            'RoutineRows.*.BatchID' => ['required', 'exists:tblBatch,BatchID'],
+            'RoutineRows.*.SubjectID' => ['required', 'exists:tblSubject,SubjectID'],
+            'RoutineRows.*.RosterPersonID' => ['required', 'exists:tblRosterPerson,RosterPersonID'],
+            'RoutineRows.*.ProxyPersonID' => ['nullable', 'exists:tblRosterPerson,RosterPersonID'],
+            'RoutineRows.*.RosterLocationID' => ['required', 'exists:tblRosterLocation,RosterLocationID'],
+            'RoutineRows.*.Remarks' => ['nullable', 'max:255'],
+        ]);
+
+        if ($input['StartTime'] >= $input['EndTime']) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['EndTime' => 'End time must be after start time.']);
+        }
+
+        $rows = [];
+        foreach ($input['RoutineRows'] as $index => $row) {
+            if (!empty($row['ProxyPersonID']) && $row['ProxyPersonID'] == $row['RosterPersonID']) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["RoutineRows.{$index}.ProxyPersonID" => 'The proxy teacher must be different from the teacher.']);
+            }
+            $departmentId = (int) $row['DepartmentID'];
+            if ((int) DB::table('tblSubject')->where('SubjectID', $row['SubjectID'])->value('DepartmentID') !== $departmentId) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["RoutineRows.{$index}.SubjectID" => 'The subject must belong to the selected department.']);
+            }
+            if ((int) DB::table('tblBatch')->where('BatchID', $row['BatchID'])->value('DepartmentID') !== $departmentId) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["RoutineRows.{$index}.BatchID" => 'The batch must belong to the selected department.']);
+            }
+            $deviceId = DB::table('tblRosterLocation')->where('RosterLocationID', $row['RosterLocationID'])->value('DeviceID');
+            if (!$deviceId || !DB::table('tblDevice')->where('DeviceID', $deviceId)->where('Status', 1)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages(["RoutineRows.{$index}.RosterLocationID" => 'This room has no active ZKT device. Add or activate its device in Room Setup first.']);
+            }
+            $rows[] = [
+                ...$row,
+                'DeviceID' => $deviceId,
+                'RosterShiftID' => null,
+                'AssignmentType' => 'Class Duty',
+                'Status' => $input['Status'],
+                'StartTime' => $input['StartTime'],
+                'EndTime' => $input['EndTime'],
+                'CrossesMidnight' => false,
+                ...$this->attendanceWindow(),
+            ];
+        }
+        return $rows;
+    }
+
+    private function attendanceWindow(): array
+    {
+        $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
+        return ['EntryEarlyMinutes' => $grace->EntryEarlyMinutes, 'EntryLateMinutes' => $grace->EntryLateMinutes,
+            'ExitEarlyMinutes' => $grace->ExitEarlyMinutes, 'ExitLateMinutes' => $grace->ExitLateMinutes];
+    }
+
     private function datesFor(Request $request): array
     {
         $mode = $request->input('RepeatMode', 'Once');
@@ -253,6 +356,17 @@ class RosterAssignmentController extends Controller
                 $classEnd = Carbon::parse($assignmentDate.' '.$class->EndTime);
                 if ($candidateStart->lt($classEnd) && $candidateEnd->gt($classStart)) return true;
             }
+        }
+        return false;
+    }
+
+    private function conflictsWithBatch(array $candidate, array $scheduled): bool
+    {
+        [$start, $end] = $this->times($candidate);
+        foreach ($scheduled as $row) {
+            if ($row['RosterPersonID'] !== $candidate['RosterPersonID']) continue;
+            [$otherStart, $otherEnd] = $this->times($row);
+            if ($start->lt($otherEnd) && $end->gt($otherStart)) return true;
         }
         return false;
     }
