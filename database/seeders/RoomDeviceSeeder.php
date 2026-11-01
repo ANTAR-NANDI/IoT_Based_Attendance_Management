@@ -13,7 +13,7 @@ class RoomDeviceSeeder extends Seeder
         foreach ([
             ['301', 'Class Room', '2nd Floor', '192.168.25.172', 'SMR5261600058'],
             ['302', 'Class Room', '2nd Floor', '192.168.25.173', 'SMR5261600071'],
-            ['303', 'Class Room', '2nd Floor', '192.168.25.170', 'SOYG2146600074'],
+            ['303', 'Class Room', '2nd Floor', '192.168.1.103', 'SOYG2146600074'],
             ['309', 'Class Room', '2nd Floor', '192.168.25.175', 'SMR5261600070'],
             ['405', 'Class Room', '3rd Floor', '192.168.25.176', 'SMR5261600065'],
             ['406', 'Class Room', '3rd Floor', '192.168.25.177', 'SMR5261600066'],

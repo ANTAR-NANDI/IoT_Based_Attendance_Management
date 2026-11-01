@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <title>@yield('title', config('app.name', 'ZKT Attendance System'))</title>
-      <link rel="icon" type="image/png" href="{{ asset('favicon.png') }}">
+      <link rel="icon" type="image/jpeg" href="{{ asset('images/baiust-logo.jpeg') }}">
       <script src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js" defer></script>
 
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>

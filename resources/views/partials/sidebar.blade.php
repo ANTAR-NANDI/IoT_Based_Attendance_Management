@@ -1,5 +1,5 @@
 <aside class="flex h-full w-64 flex-col border-r border-slate-800/80 bg-slate-950 text-slate-300">
-    <div class="flex h-16 shrink-0 items-center border-b border-slate-800/80 px-5"><div class="flex items-center space-x-3"><div class="flex h-8 w-8 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">A</div><span class="text-[15px] font-semibold tracking-wide text-white">Army Roster</span></div></div>
+    <div class="flex h-16 shrink-0 items-center border-b border-slate-800/80 px-4"><div class="flex min-w-0 items-center space-x-3"><img src="{{ asset('images/baiust-logo.jpeg') }}" alt="BAIUST logo" class="h-9 w-9 shrink-0 rounded-full object-cover ring-1 ring-[#d9ad2b]"><span class="truncate text-[15px] font-semibold tracking-wide text-white">BAIUST Attendance</span></div></div>
     @php
         $menu = Auth::user()->isAdmin() ? [
             ['route' => 'dashboard', 'label' => 'Dashboard'],
