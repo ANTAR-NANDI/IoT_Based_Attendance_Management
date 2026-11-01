@@ -11,6 +11,7 @@ use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\BatchController;
 use App\Http\Controllers\SubjectController;
 use App\Http\Controllers\RosterAssignmentController;
+use App\Http\Controllers\RoutineImportController;
 use App\Http\Controllers\RosterLocationController;
 use App\Http\Controllers\RosterPersonController;
 use App\Http\Controllers\RosterReportController;
@@ -55,6 +56,9 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/roster/assignments', RosterAssignmentController::class)->except('show')->names('roster.assignments');
     Route::get('dashboard/roster/assignments/multiple/create', [RosterAssignmentController::class, 'createMultiple'])->name('roster.assignments.create-multiple');
     Route::post('dashboard/roster/assignments/multiple', [RosterAssignmentController::class, 'storeMultiple'])->name('roster.assignments.store-multiple');
+    Route::get('dashboard/roster/assignments/import', [RoutineImportController::class, 'create'])->name('roster.assignments.import.create');
+    Route::post('dashboard/roster/assignments/import', [RoutineImportController::class, 'store'])->name('roster.assignments.import.store');
+    Route::get('dashboard/roster/assignments/import/template', [RoutineImportController::class, 'template'])->name('roster.assignments.import.template');
     Route::get('dashboard/roster/security-rotation', [RosterRotationController::class, 'create'])->name('roster.rotation.create');
     Route::post('dashboard/roster/security-rotation', [RosterRotationController::class, 'store'])->name('roster.rotation.store');
     Route::get('dashboard/reports/roster-attendance', [RosterReportController::class, 'index'])->name('reports.roster-attendance');
