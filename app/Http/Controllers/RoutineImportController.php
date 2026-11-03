@@ -15,12 +15,18 @@ class RoutineImportController extends Controller
         return view('roster.assignments.import', [
             'departments' => DB::table('tblDepartment')->orderBy('DepartmentName')->get(),
             'batches' => DB::table('tblBatch')->where('Status', 1)->orderBy('Session')->orderBy('BatchName')->get(),
+            'sessions' => DB::table('tblBatch')->where('Status', 1)->distinct()->orderBy('Session')->pluck('Session'),
         ]);
     }
 
     public function template()
     {
-        return response()->download(public_path('templates/routine-import-template.xlsx'), 'routine-import-template.xlsx');
+        $response = response()->download(public_path('templates/routine-import-template.xlsx'), 'routine-import-template.xlsx');
+        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 
     public function store(Request $request)
@@ -89,18 +95,35 @@ class RoutineImportController extends Controller
             $start = $this->time($data['in time'] ?? ''); $end = $this->time($data['out time'] ?? '');
             if ($weekday === null || !$start || !$end || $start >= $end) throw new \RuntimeException("Row {$line}: provide a valid day and start/end time.");
             $subjectCode = trim((string) ($data['subject code'] ?? '')); $teacherCode = trim((string) ($data['teacher code'] ?? '')); $roomNumber = trim((string) ($data['room number'] ?? ''));
-            $subject = DB::table('tblSubject')->where('DepartmentID', $departmentId)->whereRaw('UPPER(TRIM(Code)) = ?', [strtoupper($subjectCode)])->first();
-            $teachers = DB::table('tblRosterPerson')->where('Status', 1)->where(fn ($query) => $query->where('EmployeeCode', $teacherCode)->orWhere('ZKUserID', $teacherCode))->get();
-            if ($teachers->isEmpty()) {
-                $teachers = DB::table('tblRosterPerson')->where('Status', 1)->where('DepartmentID', $departmentId)->where('ShortName', $teacherCode)->get();
-                if ($teachers->isEmpty()) $teachers = DB::table('tblRosterPerson')->where('Status', 1)->where('ShortName', $teacherCode)->get();
+            $normalizedSubjectCode = strtoupper(preg_replace('/\s+/', '', ltrim($subjectCode, '*')));
+
+            $subjectQuery = DB::table('tblSubject')->where('DepartmentID', $departmentId);
+            if (ctype_digit($normalizedSubjectCode)) {
+                // Excel commonly converts 04211209 to 4211209.  Compare both
+                // values numerically, without changing the stored subject code.
+                $normalizedSubjectCode = ltrim($normalizedSubjectCode, '0') ?: '0';
+                $subjectQuery->whereRaw(
+                    "TRIM(LEADING '0' FROM REPLACE(UPPER(TRIM(Code)), ' ', '')) = ?",
+                    [$normalizedSubjectCode]
+                );
+            } else {
+                $subjectQuery->whereRaw("REPLACE(UPPER(TRIM(Code)), ' ', '') = ?", [$normalizedSubjectCode]);
             }
-            $room = DB::table('tblRosterLocation as l')->join('tblDevice as d', 'l.DeviceID', '=', 'd.DeviceID')->where('l.Status', 1)->where('d.Status', 1)->whereRaw("REPLACE(REPLACE(UPPER(l.LocationName), 'ROOM', ''), '-', '') = ?", [strtoupper(str_replace([' ', '-'], '', $roomNumber))])->select('l.RosterLocationID', 'l.DeviceID')->first();
+            $subject = $subjectQuery->first();
+            $teachers = DB::table('tblRosterPerson')->where('Status', 1)->where('EmployeeCode', $teacherCode)->get();
+            $room = DB::table('tblRosterLocation as l')
+                ->leftJoin('tblDevice as d', function ($join) {
+                    $join->on('l.DeviceID', '=', 'd.DeviceID')->where('d.Status', 1);
+                })
+                ->where('l.Status', 1)
+                ->whereRaw("REPLACE(REPLACE(REPLACE(UPPER(l.LocationName), 'ROOM', ''), '-', ''), ' ', '') = ?", [strtoupper(str_replace([' ', '-'], '', $roomNumber))])
+                ->select('l.RosterLocationID', 'd.DeviceID')
+                ->first();
             if (!$subject) throw new \RuntimeException("Row {$line}: subject code '{$subjectCode}' was not found in the selected department.");
             if ($teachers->isEmpty()) throw new \RuntimeException("Row {$line}: teacher code '{$teacherCode}' was not found or is inactive.");
-            if ($teachers->count() > 1) throw new \RuntimeException("Row {$line}: teacher short name '{$teacherCode}' matches multiple active employees. Use the employee code instead.");
+            if ($teachers->count() > 1) throw new \RuntimeException("Row {$line}: teacher code '{$teacherCode}' matches multiple active employees.");
             $teacher = $teachers->first();
-            if (!$room) throw new \RuntimeException("Row {$line}: room '{$roomNumber}' has no active linked device.");
+            if (!$room) throw new \RuntimeException("Row {$line}: room '{$roomNumber}' was not found or is inactive.");
             $remarks = array_filter([
                 trim((string) ($data['remarks'] ?? '')),
                 filled($data['level'] ?? null) ? 'Level '.trim((string) $data['level']) : null,
@@ -134,10 +157,53 @@ class RoutineImportController extends Controller
     {
         if (strtolower($extension) === 'csv') return array_map('str_getcsv', file($path, FILE_IGNORE_NEW_LINES));
         if (!class_exists(\ZipArchive::class)) throw new \RuntimeException('Excel imports need the PHP ZIP extension. Upload a CSV file instead.');
-        $zip = new \ZipArchive(); if ($zip->open($path) !== true) throw new \RuntimeException('The uploaded Excel file could not be read.');
-        $shared = []; if ($xml = $zip->getFromName('xl/sharedStrings.xml')) foreach (simplexml_load_string($xml)->si as $item) $shared[] = (string) $item->t ?: (string) $item->r->t;
-        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml'); $zip->close(); if (!$sheetXml) throw new \RuntimeException('The Excel file must contain data on its first worksheet.');
-        $rows = []; foreach (simplexml_load_string($sheetXml)->sheetData->row as $sheetRow) { $row = []; foreach ($sheetRow->c as $cell) { $column = preg_replace('/\d+/', '', (string) $cell['r']); $index = 0; foreach (str_split($column) as $letter) $index = $index * 26 + (ord($letter) - 64); $value = (string) $cell->v; $row[$index - 1] = (string) $cell['t'] === 's' ? ($shared[(int) $value] ?? '') : $value; } $rows[] = $row ? array_values(array_replace(array_fill(0, max(array_keys($row)) + 1, ''), $row)) : []; }
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) throw new \RuntimeException('The uploaded Excel file could not be read.');
+
+        $namespace = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+        $shared = [];
+        if ($xml = $zip->getFromName('xl/sharedStrings.xml')) {
+            $sharedXml = simplexml_load_string($xml);
+            if ($sharedXml !== false) {
+                foreach ($sharedXml->children($namespace)->si ?? [] as $item) {
+                    $shared[] = $this->xlsxText($item, $namespace);
+                }
+            }
+        }
+
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        if (!$sheetXml) throw new \RuntimeException('The Excel file must contain data on its first worksheet.');
+        $sheet = simplexml_load_string($sheetXml);
+        if ($sheet === false) throw new \RuntimeException('The first worksheet in the uploaded Excel file is invalid.');
+
+        $sheetData = $sheet->children($namespace)->sheetData;
+        $rows = [];
+        foreach ($sheetData->row ?? [] as $sheetRow) {
+            $row = [];
+            foreach ($sheetRow->c ?? [] as $cell) {
+                $attributes = $cell->attributes();
+                $column = preg_replace('/\d+/', '', (string) $attributes['r']);
+                $index = 0;
+                foreach (str_split($column) as $letter) $index = $index * 26 + (ord($letter) - 64);
+
+                $cellData = $cell->children($namespace);
+                $type = (string) $attributes['t'];
+                $rawValue = (string) $cellData->v;
+                $row[$index - 1] = match ($type) {
+                    's' => $shared[(int) $rawValue] ?? '',
+                    'inlineStr' => isset($cellData->is) ? $this->xlsxText($cellData->is, $namespace) : '',
+                    default => $rawValue,
+                };
+            }
+            $rows[] = $row ? array_values(array_replace(array_fill(0, max(array_keys($row)) + 1, ''), $row)) : [];
+        }
         return $rows;
+    }
+
+    private function xlsxText(\SimpleXMLElement $node, string $namespace): string
+    {
+        $node->registerXPathNamespace('xlsx', $namespace);
+        return implode('', array_map('strval', $node->xpath('.//xlsx:t') ?: []));
     }
 }
