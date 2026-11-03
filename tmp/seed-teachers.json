@@ -1,0 +1,506 @@
+[
+  {
+    "code": "AI",
+    "name": "Afroz Islam",
+    "designation": "Lecturer",
+    "department": "Computer Science & Engineering",
+    "active": true,
+    "shortName": "AI"
+  },
+  {
+    "code": "26-41-37",
+    "name": "Anisur Rahman",
+    "designation": "Lecturer",
+    "department": "English",
+    "active": true,
+    "shortName": "ANR"
+  },
+  {
+    "code": "19-21-16",
+    "name": "Ann Nazmun Sakib",
+    "designation": "Assistant Professor",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "ANS"
+  },
+  {
+    "code": "21-21-23",
+    "name": "Arman Hossain Patwary",
+    "designation": "Lecturer",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "AHP"
+  },
+  {
+    "code": "25-21-40",
+    "name": "Arshil Azeem",
+    "designation": "Lecturer",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "AA"
+  },
+  {
+    "code": "19-71-06",
+    "name": "Dipannita Kundu Rumki",
+    "designation": "Assistant Professor",
+    "department": "Law",
+    "active": true,
+    "shortName": "DKR"
+  },
+  {
+    "code": "26-31-46",
+    "name": "Dr. Aklima Akter",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "AA"
+  },
+  {
+    "code": "16-31-003",
+    "name": "Dr. Fatema Johara",
+    "designation": "Professor & Head",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "FJ"
+  },
+  {
+    "code": "26-71-21",
+    "name": "Dr. Jannatul Ferdous",
+    "designation": "Professor, Comilla University",
+    "department": "Adjunct Faculty",
+    "active": true,
+    "shortName": "JF"
+  },
+  {
+    "code": "22-71-08",
+    "name": "Dr. Md. Nayem Alimul Hyder",
+    "designation": "Associate Professor and Head of the Department",
+    "department": "Law",
+    "active": true,
+    "shortName": "NAH"
+  },
+  {
+    "code": "MNI",
+    "name": "Dr. Md. Nazrul Islam",
+    "designation": "Associate Professor",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "MNI"
+  },
+  {
+    "code": "18-31-16",
+    "name": "Dr. Md. Tahidur Rahman",
+    "designation": "Professor & Dean",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "TR"
+  },
+  {
+    "code": "16-31-007",
+    "name": "Dr. Mohammad Shariful Islam",
+    "designation": "Associate Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "MSI"
+  },
+  {
+    "code": "19-31-25",
+    "name": "Farhana Jesmin",
+    "designation": "Assistant Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "FJS"
+  },
+  {
+    "code": "20-31-28",
+    "name": "Fatema Tuz Zohora",
+    "designation": "Assistant Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "FTZ"
+  },
+  {
+    "code": "25-21-38",
+    "name": "Fazle Rabbi Rakib",
+    "designation": "Computer Operator",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "45-31-44",
+    "name": "Imran Hossain",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "IH"
+  },
+  {
+    "code": "26-21-45",
+    "name": "Jannatul Akmum",
+    "designation": "Lecturer",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "JA"
+  },
+  {
+    "code": "24-71-15",
+    "name": "Lamia Dilshad Waziha",
+    "designation": "Lecturer",
+    "department": "Law",
+    "active": true,
+    "shortName": "LDW"
+  },
+  {
+    "code": "24-21-35",
+    "name": "Lutfar Rahman Talukder",
+    "designation": "Assistant Professor",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "LR"
+  },
+  {
+    "code": "26-71-24",
+    "name": "Manik Das",
+    "designation": "Joint District & Sessions Judge",
+    "department": "Adjunct Faculty",
+    "active": true,
+    "shortName": "MD"
+  },
+  {
+    "code": "24-31-38",
+    "name": "Md Abdullah Al Noman",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "AN"
+  },
+  {
+    "code": "17-02-52",
+    "name": "Md Abu Sayed Rony",
+    "designation": "Lab Attendant",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "22-21-28",
+    "name": "Md Belal Hossain",
+    "designation": "Lab Technician",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "23-21-29",
+    "name": "Md Imam Hossain",
+    "designation": "Assistant Professor",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "IH"
+  },
+  {
+    "code": "22-21-25",
+    "name": "Md Saiful Islam",
+    "designation": "Lab Technician",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "23-71-11",
+    "name": "Md Shamim Ahmed",
+    "designation": "Assistant Professor",
+    "department": "Law",
+    "active": true,
+    "shortName": "MSA"
+  },
+  {
+    "code": "18-31-17",
+    "name": "Md. Ariful Haque Chowdhury",
+    "designation": "Associate Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "AHC"
+  },
+  {
+    "code": "MGM",
+    "name": "Md. Gulam Mustafa",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "MGM"
+  },
+  {
+    "code": "MJM",
+    "name": "Md. Jaman Mia",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "MJM"
+  },
+  {
+    "code": "MMH",
+    "name": "Md. Mehadi Hasan",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "MMH"
+  },
+  {
+    "code": "26-21-44",
+    "name": "Md. Obaidullah Sobhani",
+    "designation": "Messenger",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "24-21-34",
+    "name": "Md. Rafi Mahmud",
+    "designation": "Lab Assistant",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "25-21-41",
+    "name": "Md. Raquib Uddin Sorkar",
+    "designation": "Lab Assistant",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": ""
+  },
+  {
+    "code": "26-31-47",
+    "name": "Md. Sabbir Ahmed Mayen",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "SAM"
+  },
+  {
+    "code": "22-31-33",
+    "name": "Md. Shahanur Islam",
+    "designation": "Associate Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "SI"
+  },
+  {
+    "code": "26-21-46",
+    "name": "Md. Tahmidul Islam",
+    "designation": "Lecturer",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "MTI"
+  },
+  {
+    "code": "YAA",
+    "name": "Md. Yasir Arafat Arman",
+    "designation": "Assistant Professor",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "YAA"
+  },
+  {
+    "code": "26-31-48",
+    "name": "Mirza Shakil",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "MS"
+  },
+  {
+    "code": "19-71-05",
+    "name": "Mst. Rezwana Karim",
+    "designation": "Assistant Professor",
+    "department": "Law",
+    "active": true,
+    "shortName": "MRK"
+  },
+  {
+    "code": "22-71-10",
+    "name": "Nadia Islam Nody",
+    "designation": "Assistant Professor",
+    "department": "Law",
+    "active": true,
+    "shortName": "NIN"
+  },
+  {
+    "code": "26-41-36",
+    "name": "Nafis Ahmed Bhuiyan",
+    "designation": "Lecturer",
+    "department": "English",
+    "active": true,
+    "shortName": "NAB"
+  },
+  {
+    "code": "NM",
+    "name": "Nafisa Maliyat",
+    "designation": "Lecturer",
+    "department": "English",
+    "active": true,
+    "shortName": "NM"
+  },
+  {
+    "code": "26-42-49",
+    "name": "Nazmul Alam Ridoy",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "NAR"
+  },
+  {
+    "code": "26-71-22",
+    "name": "Rafiqul Islam Hossaini",
+    "designation": "Advocate",
+    "department": "Adjunct Faculty",
+    "active": true,
+    "shortName": "RIH"
+  },
+  {
+    "code": "18-31-19",
+    "name": "Rebaka Sultana",
+    "designation": "Assistant Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "RS"
+  },
+  {
+    "code": "25-21-42",
+    "name": "S.M Tanvir Ahmed",
+    "designation": "Lecturer",
+    "department": "Communication Engineering",
+    "active": true,
+    "shortName": "TA"
+  },
+  {
+    "code": "24-11-61",
+    "name": "Saad Bin Kamal",
+    "designation": "Lecturer",
+    "department": "Computer Science & Engineering",
+    "active": true,
+    "shortName": "SBK"
+  },
+  {
+    "code": "26-71-23",
+    "name": "Sabbir Ahmed Mukim",
+    "designation": "Advocate",
+    "department": "Adjunct Faculty",
+    "active": true,
+    "shortName": "SAM"
+  },
+  {
+    "code": "24-31-39",
+    "name": "Sabiha Shirin Sara",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "SSS"
+  },
+  {
+    "code": "26-71-19",
+    "name": "Sadd Been Hossain Fahim",
+    "designation": "Lecturer",
+    "department": "Law",
+    "active": true,
+    "shortName": "SBF"
+  },
+  {
+    "code": "25-71-17",
+    "name": "Saimur Rahman",
+    "designation": "Lecturer",
+    "department": "Law",
+    "active": true,
+    "shortName": "SR"
+  },
+  {
+    "code": "SHT",
+    "name": "Sajjad Hossain Tamim",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "SHT"
+  },
+  {
+    "code": "26-71-20",
+    "name": "Saud Hasan",
+    "designation": "District & Sessions Judge",
+    "department": "Adjunct Faculty",
+    "active": true,
+    "shortName": "SH"
+  },
+  {
+    "code": "22-71-09",
+    "name": "Shadab Bin Ashraf",
+    "designation": "Assistant Professor",
+    "department": "Law",
+    "active": true,
+    "shortName": "SBA"
+  },
+  {
+    "code": "25-42-41",
+    "name": "Sharmin Akter",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "SHA"
+  },
+  {
+    "code": "SA",
+    "name": "Sharmin Akther",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "SA"
+  },
+  {
+    "code": "25-31-41",
+    "name": "Shipa Akter",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "SHA"
+  },
+  {
+    "code": "25-31-43",
+    "name": "Tahsin Mamun Prottoy",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "TMP"
+  },
+  {
+    "code": "24-71-13",
+    "name": "Tanjila Tamanna",
+    "designation": "Assistant Professor & Program Coordinator",
+    "department": "Law",
+    "active": true,
+    "shortName": "TT"
+  },
+  {
+    "code": "22-31-34",
+    "name": "Tawhid Ahmed Chowdhury",
+    "designation": "Assistant Professor",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "TAC"
+  },
+  {
+    "code": "TT",
+    "name": "Tazin Tamanna",
+    "designation": "Lecturer",
+    "department": "Science & Humanities",
+    "active": true,
+    "shortName": "TT"
+  },
+  {
+    "code": "24-31-37",
+    "name": "Yeakub Ali",
+    "designation": "Lecturer",
+    "department": "Business Administration",
+    "active": true,
+    "shortName": "YA"
+  }
+]

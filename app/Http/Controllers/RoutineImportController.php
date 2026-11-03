@@ -69,21 +69,22 @@ class RoutineImportController extends Controller
 
     private function resolveRows(array $rows, int $departmentId, string $startDate, string $endDate): array
     {
-        $required = ['day', 'in time', 'out time', 'subject code', 'teacher code', 'room number', 'remarks'];
+        $required = ['day', 'in time', 'out time', 'subject code', 'teacher code', 'room number'];
         if (!$rows) throw new \RuntimeException('The Excel file has no data rows.');
         $headerRow = null;
         foreach ($rows as $index => $row) {
-            if (array_map(fn ($value) => strtolower(trim((string) $value)), $row) === $required) { $headerRow = $index; break; }
+            $headers = array_map(fn ($value) => strtolower(trim((string) $value)), $row);
+            if (!array_diff($required, $headers)) { $headerRow = $index; break; }
         }
-        if ($headerRow === null) throw new \RuntimeException('Use the downloaded template. Its columns must be: Day, In Time, Out Time, Subject Code, Teacher Code, Room Number, Remarks.');
-        $headers = $required;
+        if ($headerRow === null) throw new \RuntimeException('Use columns: Day, In Time, Out Time, Subject Code, Teacher Code, and Room Number. Level, Term, Section, and Remarks are optional.');
+        $headers = array_map(fn ($value) => strtolower(trim((string) $value)), $rows[$headerRow]);
         $rows = array_slice($rows, $headerRow + 1);
 
         $result = [];
         foreach ($rows as $index => $row) {
             if (!array_filter($row, fn ($value) => $value !== null && $value !== '')) continue;
             $line = $index + $headerRow + 2;
-            $data = array_combine($headers, array_pad($row, count($headers), ''));
+            $data = array_combine($headers, array_slice(array_pad($row, count($headers), ''), 0, count($headers)));
             $weekday = $this->weekday($data['day'] ?? '');
             $start = $this->time($data['in time'] ?? ''); $end = $this->time($data['out time'] ?? '');
             if ($weekday === null || !$start || !$end || $start >= $end) throw new \RuntimeException("Row {$line}: provide a valid day and start/end time.");
@@ -100,7 +101,13 @@ class RoutineImportController extends Controller
             if ($teachers->count() > 1) throw new \RuntimeException("Row {$line}: teacher short name '{$teacherCode}' matches multiple active employees. Use the employee code instead.");
             $teacher = $teachers->first();
             if (!$room) throw new \RuntimeException("Row {$line}: room '{$roomNumber}' has no active linked device.");
-            $result[] = ['weekday' => $weekday, 'start' => $start, 'end' => $end, 'subject' => $subject, 'teacher' => $teacher, 'room' => $room, 'remarks' => trim((string) ($data['remarks'] ?? '')) ?: null];
+            $remarks = array_filter([
+                trim((string) ($data['remarks'] ?? '')),
+                filled($data['level'] ?? null) ? 'Level '.trim((string) $data['level']) : null,
+                filled($data['term'] ?? null) ? 'Term '.trim((string) $data['term']) : null,
+                filled($data['section'] ?? null) ? 'Section '.trim((string) $data['section']) : null,
+            ]);
+            $result[] = ['weekday' => $weekday, 'start' => $start, 'end' => $end, 'subject' => $subject, 'teacher' => $teacher, 'room' => $room, 'remarks' => $remarks ? implode(' | ', $remarks) : null];
         }
         return $result;
     }
