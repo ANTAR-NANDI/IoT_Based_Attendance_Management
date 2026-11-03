@@ -22,6 +22,7 @@ class DatabaseSeeder extends Seeder
             RosterPersonSeeder::class,
             LawSubjectSeeder::class,
             BusinessAdministrationSubjectSeeder::class,
+            CommunicationEngineeringSubjectSeeder::class,
             BatchSeeder::class,
             RoomDeviceSeeder::class,
             // RoomSeeder::class,

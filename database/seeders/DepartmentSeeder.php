@@ -14,6 +14,7 @@ class DepartmentSeeder extends Seeder
             ['DepartmentCode' => 'LAW', 'DepartmentName' => 'Law'],
             ['DepartmentCode' => 'ENG', 'DepartmentName' => 'English'],
             ['DepartmentCode' => 'CSE', 'DepartmentName' => 'Computer Science & Engineering'],
+            ['DepartmentCode' => 'CE', 'DepartmentName' => 'Communication Engineering'],
             ['DepartmentCode' => 'BBA', 'DepartmentName' => 'Business Administration'],
             ['DepartmentCode' => 'SH', 'DepartmentName' => 'Science & Humanities'],
             ['DepartmentCode' => 'ADJ', 'DepartmentName' => 'Adjunct Faculty'],

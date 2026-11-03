@@ -22,6 +22,11 @@ class DesignationSeeder extends Seeder
             'Professor, Comilla University',
             'Advocate',
             'Joint District & Sessions Judge',
+            'Lab Technician',
+            'Computer Operator',
+            'Lab Assistant',
+            'Lab Attendant',
+            'Messenger',
         ]);
 
         foreach ($designations as $designation) {

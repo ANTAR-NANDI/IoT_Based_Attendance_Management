@@ -25,8 +25,14 @@ class RoomDeviceSeeder extends Seeder
             ['506', 'Class Room', '5th Floor', null, null], ['507', 'Class Room', '5th Floor', null, null],
             ['508', 'Class Room', '5th Floor', null, null], ['516', 'Class Room', '5th Floor', null, null],
             ['515', 'Computer Lab', '5th Floor', null, null],
+            ['106', 'Class Room', null, null, null], ['203', 'Class Room', null, null, null],
+            ['206', 'Class Room', null, null, null], ['207', 'Class Room', null, null, null],
+            ['208', 'Class Room', null, null, null], ['209', 'Class Room', null, null, null],
+            ['Drawing Lab', 'Lab', null, null, null], ['AutoCAD Lab', 'Lab', null, null, null],
+            ['Transport Lab', 'Lab', null, null, null], ['Water Resource Lab', 'Lab', null, null, null],
+            ['Environmental Lab', 'Lab', null, null, null], ['Materials Lab', 'Lab', null, null, null],
         ] as [$roomNumber, $type, $floor, $ipAddress, $serialNo]) {
-            $locationName = "Room - {$roomNumber}";
+            $locationName = ctype_digit($roomNumber) ? "Room - {$roomNumber}" : $roomNumber;
 
             $deviceId = null;
             if ($serialNo) {

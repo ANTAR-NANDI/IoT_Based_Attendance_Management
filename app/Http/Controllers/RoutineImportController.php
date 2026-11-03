@@ -89,7 +89,7 @@ class RoutineImportController extends Controller
             if ($weekday === null || !$start || !$end || $start >= $end) throw new \RuntimeException("Row {$line}: provide a valid day and start/end time.");
             $subjectCode = trim((string) ($data['subject code'] ?? '')); $teacherCode = trim((string) ($data['teacher code'] ?? '')); $roomNumber = trim((string) ($data['room number'] ?? ''));
             $subject = DB::table('tblSubject')->where('DepartmentID', $departmentId)->whereRaw('UPPER(TRIM(Code)) = ?', [strtoupper($subjectCode)])->first();
-            $teacher = DB::table('tblRosterPerson')->where('Status', 1)->where(fn ($query) => $query->where('EmployeeCode', $teacherCode)->orWhere('ZKUserID', $teacherCode))->first();
+            $teacher = DB::table('tblRosterPerson')->where('Status', 1)->where(fn ($query) => $query->where('EmployeeCode', $teacherCode)->orWhere('ZKUserID', $teacherCode)->orWhere('ShortName', $teacherCode))->first();
             $room = DB::table('tblRosterLocation as l')->join('tblDevice as d', 'l.DeviceID', '=', 'd.DeviceID')->where('l.Status', 1)->where('d.Status', 1)->whereRaw("REPLACE(REPLACE(UPPER(l.LocationName), 'ROOM', ''), '-', '') = ?", [strtoupper(str_replace([' ', '-'], '', $roomNumber))])->select('l.RosterLocationID', 'l.DeviceID')->first();
             if (!$subject) throw new \RuntimeException("Row {$line}: subject code '{$subjectCode}' was not found in the selected department.");
             if (!$teacher) throw new \RuntimeException("Row {$line}: teacher code '{$teacherCode}' was not found or is inactive.");

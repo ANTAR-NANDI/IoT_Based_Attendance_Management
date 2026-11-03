@@ -14,6 +14,13 @@ class RosterPersonSeeder extends Seeder
         $now = now();
         $departmentIds = DB::table('tblDepartment')->pluck('DepartmentID', 'DepartmentName');
         $designationIds = DB::table('tblDesignation')->pluck('DesignationID', 'DesignationName');
+        $legacyCeCodes = [
+            'IH' => '23-21-29', 'LR' => '24-21-35', 'ANS' => '19-21-16', 'AHP' => '21-21-23',
+            'AA' => '25-21-40', 'TA' => '25-21-42', 'MTI' => '26-21-46', 'JA' => '26-21-45',
+        ];
+        foreach ($legacyCeCodes as $shortForm => $employeeCode) {
+            DB::table('tblRosterPerson')->where('EmployeeCode', $shortForm)->update(['EmployeeCode' => $employeeCode, 'updated_at' => $now]);
+        }
         $employeeEmails = [
             '22-71-08' => 'head.law@baiust.ac.bd', '19-71-05' => 'rezwana.law@baiust.ac.bd',
             '19-71-06' => 'drumki.law@baiust.ac.bd', '24-71-13' => 'tanjila.law@baiust.ac.bd',
@@ -33,6 +40,11 @@ class RosterPersonSeeder extends Seeder
             '25-31-41' => 'shipa.dba@baiust.ac.bd', '25-31-43' => 'tahsin.dba@baiust.ac.bd',
             '45-31-44' => 'imran.dba@baiust.ac.bd', '26-31-46' => 'aklima3rd@yahoo.com',
             '26-31-47' => 'shabbirahmedmayen@gmail.com', '26-31-48' => 'shakilmirzajkknu@gmail.com',
+            '23-21-29' => 'imam.ce@baiust.ac.bd', '24-21-35' => 'lutfar.ce@baiust.ac.bd',
+            '19-21-16' => 'sakib.ce@baiust.ac.bd', '21-21-23' => 'arman.ce@baiust.ac.bd',
+            '25-21-40' => 'azeem.ce@baiust.ac.bd', '25-21-42' => 'tanvir.ce@baiust.ac.bd',
+            '26-21-46' => 'tahmidul.ce@baiust.ac.bd', '26-21-45' => 'jannatul.ce@baiust.ac.bd',
+            '25-21-38' => 'sectionoffice.ce@baiust.ac.bd',
         ];
 
         foreach ([
@@ -46,7 +58,7 @@ class RosterPersonSeeder extends Seeder
             ['24-71-15', 'Lamia Dilshad Waziha', 'Lecturer', 'Law', true],
             ['25-71-17', 'Saimur Rahman', 'Lecturer', 'Law', true],
             ['26-71-19', 'Sadd Been Hossain Fahim', 'Lecturer', 'Law', true],
-            ['26-41-36', 'Anisur Rahman', 'Lecturer', 'English', true],
+            ['26-41-36', 'Anisur Rahman', 'Lecturer', 'English', true, 'ANR'],
             ['24-11-61', 'Saad Bin Kamal', 'Lecturer', 'Computer Science & Engineering', true],
             ['25-42-41', 'Sharmin Akter', 'Lecturer', 'Science & Humanities', true],
             ['26-42-49', 'Nazmul Alam Ridoy', 'Lecturer', 'Science & Humanities', true],
@@ -73,18 +85,45 @@ class RosterPersonSeeder extends Seeder
             ['26-31-46', 'Dr. Aklima Akter', 'Lecturer', 'Business Administration', true],
             ['26-31-47', 'Md. Sabbir Ahmed Mayen', 'Lecturer', 'Business Administration', true],
             ['26-31-48', 'Mirza Shakil', 'Lecturer', 'Business Administration', true],
-        ] as [$employeeCode, $personName, $designation, $department, $status]) {
+            ['23-21-29', 'Md Imam Hossain', 'Assistant Professor', 'Communication Engineering', true, 'IH'],
+            ['24-21-35', 'Lutfar Rahman Talukder', 'Assistant Professor', 'Communication Engineering', true, 'LR'],
+            ['19-21-16', 'Ann Nazmun Sakib', 'Assistant Professor', 'Communication Engineering', true, 'ANS'],
+            ['21-21-23', 'Arman Hossain Patwary', 'Lecturer', 'Communication Engineering', true, 'AHP'],
+            ['25-21-40', 'Arshil Azeem', 'Lecturer', 'Communication Engineering', true, 'AA'],
+            ['25-21-42', 'S.M Tanvir Ahmed', 'Lecturer', 'Communication Engineering', true, 'TA'],
+            ['26-21-46', 'Md. Tahmidul Islam', 'Lecturer', 'Communication Engineering', true, 'MTI'],
+            ['26-21-45', 'Jannatul Akmum', 'Lecturer', 'Communication Engineering', true, 'JA'],
+            ['22-21-28', 'Md Belal Hossain', 'Lab Technician', 'Communication Engineering', true],
+            ['22-21-25', 'Md Saiful Islam', 'Lab Technician', 'Communication Engineering', true],
+            ['25-21-38', 'Fazle Rabbi Rakib', 'Computer Operator', 'Communication Engineering', true],
+            ['24-21-34', 'Md. Rafi Mahmud', 'Lab Assistant', 'Communication Engineering', true],
+            ['25-21-41', 'Md. Raquib Uddin Sorkar', 'Lab Assistant', 'Communication Engineering', true],
+            ['17-02-52', 'Md Abu Sayed Rony', 'Lab Attendant', 'Communication Engineering', true],
+            ['26-21-44', 'Md. Obaidullah Sobhani', 'Messenger', 'Communication Engineering', true],
+            ['MNI', 'Dr. Md. Nazrul Islam', 'Associate Professor', 'Science & Humanities', true],
+            ['MGM', 'Md. Gulam Mustafa', 'Lecturer', 'Science & Humanities', true],
+            ['YAA', 'Md. Yasir Arafat Arman', 'Assistant Professor', 'Science & Humanities', true],
+            ['TT', 'Tazin Tamanna', 'Lecturer', 'Science & Humanities', true],
+            ['SA', 'Sharmin Akther', 'Lecturer', 'Science & Humanities', true],
+            ['SHT', 'Sajjad Hossain Tamim', 'Lecturer', 'Science & Humanities', true],
+            ['MMH', 'Md. Mehadi Hasan', 'Lecturer', 'Science & Humanities', true],
+            ['MJM', 'Md. Jaman Mia', 'Lecturer', 'Science & Humanities', true],
+            ['AI', 'Afroz Islam', 'Lecturer', 'Computer Science & Engineering', true],
+            ['NM', 'Nafisa Maliyat', 'Lecturer', 'English', true],
+        ] as $person) {
+            [$employeeCode, $personName, $designation, $department, $status, $zktUserId] = array_pad($person, 6, null);
             DB::table('tblRosterPerson')->updateOrInsert(
                 ['EmployeeCode' => $employeeCode],
                 [
                     'PersonName' => $personName,
+                    'ShortName' => $zktUserId ?: null,
                     'RoleName' => $designation,
                     'DepartmentName' => $department,
                     'DepartmentID' => $departmentIds[$department],
                     'DesignationID' => $designationIds[$designation],
                     'RunsRoster' => true,
                     'WorkMode' => 'Both',
-                    'ZKUserID' => $employeeCode,
+                    'ZKUserID' => $zktUserId ?: $employeeCode,
                     'Status' => $status,
                     'created_at' => $now,
                     'updated_at' => $now,

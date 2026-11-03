@@ -15,7 +15,7 @@ class RosterPersonController extends Controller
     {
         $people = DB::table('tblRosterPerson as p')->leftJoin('tblDepartment as d', 'p.DepartmentID', '=', 'd.DepartmentID')->leftJoin('tblDesignation as des', 'p.DesignationID', '=', 'des.DesignationID')
             ->when($request->filled('search'), fn ($q) => $q->where(function ($q) use ($request) {
-                $q->where('p.PersonName', 'like', "%{$request->search}%")->orWhere('p.EmployeeCode', 'like', "%{$request->search}%")->orWhere('p.ZKUserID', 'like', "%{$request->search}%")->orWhere('des.DesignationName', 'like', "%{$request->search}%");
+                $q->where('p.PersonName', 'like', "%{$request->search}%")->orWhere('p.ShortName', 'like', "%{$request->search}%")->orWhere('p.EmployeeCode', 'like', "%{$request->search}%")->orWhere('p.ZKUserID', 'like', "%{$request->search}%")->orWhere('des.DesignationName', 'like', "%{$request->search}%");
             }))
             ->select('p.*', 'd.DepartmentName as SelectedDepartment', 'des.DesignationName as SelectedDesignation')->orderBy('p.PersonName')->paginate(20)->withQueryString();
 
@@ -60,6 +60,7 @@ class RosterPersonController extends Controller
         $data = $request->validate([
             'EmployeeCode' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'EmployeeCode')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'PersonName' => ['required', 'max:150'],
+            'ShortName' => ['nullable', 'max:30', Rule::unique('tblRosterPerson', 'ShortName')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'DepartmentID' => ['required', 'exists:tblDepartment,DepartmentID'],
             'DesignationID' => ['required', 'exists:tblDesignation,DesignationID'],
             'ZKUserID' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'ZKUserID')->ignore($person?->RosterPersonID, 'RosterPersonID')],

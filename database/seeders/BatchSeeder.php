@@ -9,9 +9,9 @@ class BatchSeeder extends Seeder
 {
     public function run(): void
     {
-        $departmentIds = DB::table('tblDepartment')->whereIn('DepartmentCode', ['LAW', 'BBA'])->pluck('DepartmentID', 'DepartmentCode');
-        if (!$departmentIds->has('LAW') || !$departmentIds->has('BBA')) {
-            throw new \RuntimeException('The Law and Business Administration departments must be seeded before running BatchSeeder.');
+        $departmentIds = DB::table('tblDepartment')->whereIn('DepartmentCode', ['LAW', 'BBA', 'CE'])->pluck('DepartmentID', 'DepartmentCode');
+        if (!$departmentIds->has('LAW') || !$departmentIds->has('BBA') || !$departmentIds->has('CE')) {
+            throw new \RuntimeException('The Law, Business Administration, and Communication Engineering departments must be seeded before running BatchSeeder.');
         }
 
         $now = now();
@@ -24,6 +24,10 @@ class BatchSeeder extends Seeder
             ['BBA', '18th Batch', 'Spring-2024', 'L3-T2'], ['BBA', '19th Batch', 'Fall-2024', 'L3-T1'],
             ['BBA', '20th Batch', 'Spring-2025', 'L2-T2'], ['BBA', '21th Batch', 'Fall-2025', 'L2-T1'],
             ['BBA', '22th Batch', 'Spring-2026', 'L1-T2'], ['BBA', '23th Batch', 'Fall-2026', 'L1-T1'],
+            ['CE', '15th batch', 'Spring-2023', 'L4-T2'], ['CE', '16th batch', 'Fall-2023', 'L4-T1'],
+            ['CE', '17th batch', 'Spring-2024', 'L3-T2'], ['CE', '18th batch', 'Fall-2024', 'L3-T1'],
+            ['CE', '19th batch', 'Spring-2025', 'L2-T2'], ['CE', '20th batch', 'Fall-2025', 'L2-T1'],
+            ['CE', '21th batch', 'Spring-2026', 'L1-T2'], ['CE', '22th batch', 'Fall-2026', 'L1-T1'],
         ] as [$departmentCode, $batchName, $session, $semester]) {
             DB::table('tblBatch')->updateOrInsert(
                 ['BatchName' => $batchName, 'DepartmentID' => $departmentIds[$departmentCode]],
