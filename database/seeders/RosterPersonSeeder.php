@@ -27,8 +27,9 @@ class RosterPersonSeeder extends Seeder
             '22-71-09' => 'ashraf.law@baiust.ac.bd', '22-71-10' => 'nadia.law@baiust.ac.bd',
             '23-71-11' => 'mdshamim.law@baiust.ac.bd', '24-71-15' => 'lamia.law@baiust.ac.bd',
             '25-71-17' => 'saimur.law@baiust.ac.bd', '26-71-19' => 'fahim.law@baiust.ac.bd',
-            '24-11-61' => 'saad.cse@baiust.ac.bd', '25-42-41' => 'sharmin.schum@baiust.ac.bd',
-            '26-42-49' => 'nazmul.schum@baiust.ac.bd', '26-71-20' => 'sauddu@gmail.com',
+            '26-41-36' => 'nafis.english@baiust.ac.bd', '26-41-37' => 'anis.english@baiust.ac.bd',
+            '24-11-61' => 'saad.cse@baiust.ac.bd', '25-42-41' => 'sharmin.scnhum@baiust.ac.bd',
+            '26-42-49' => 'nazmul.scnhum@baiust.ac.bd', '26-71-20' => 'sauddu@gmail.com',
             '26-71-21' => 'jannat.lata@yahoo.com', '26-71-23' => 'samukim1@gmail.com',
             '26-71-22' => 'advrih@gmail.com', '26-71-24' => 'maniklaw88@gmail.com',
             '18-31-16' => 'tahidur.dba@baiust.ac.bd', '16-31-003' => 'fatema.dba@baiust.ac.bd',
@@ -46,6 +47,21 @@ class RosterPersonSeeder extends Seeder
             '26-21-46' => 'tahmidul.ce@baiust.ac.bd', '26-21-45' => 'jannatul.ce@baiust.ac.bd',
             '25-21-38' => 'sectionoffice.ce@baiust.ac.bd',
         ];
+        $shortNames = [
+            '22-71-08' => 'NAH', '19-71-05' => 'MRK', '19-71-06' => 'DKR', '24-71-13' => 'TT',
+            '22-71-09' => 'SBA', '22-71-10' => 'NIN', '23-71-11' => 'MSA', '24-71-15' => 'LDW',
+            '25-71-17' => 'SR', '26-71-19' => 'SBF', '26-41-36' => 'NAB', '26-41-37' => 'ANR',
+            '24-11-61' => 'SBK', '25-42-41' => 'SHA', '26-42-49' => 'NAR', '26-71-20' => 'SH',
+            '26-71-21' => 'JF', '26-71-23' => 'SAM', '26-71-22' => 'RIH', '26-71-24' => 'MD',
+            '18-31-16' => 'TR', '16-31-003' => 'FJ', '16-31-007' => 'MSI', '18-31-17' => 'AHC',
+            '22-31-33' => 'SI', '22-31-34' => 'TAC', '18-31-19' => 'RS', '19-31-25' => 'FJS',
+            '20-31-28' => 'FTZ', '24-31-38' => 'AN', '24-31-37' => 'YA', '24-31-39' => 'SSS',
+            '25-31-41' => 'SHA', '25-31-43' => 'TMP', '45-31-44' => 'IH', '26-31-46' => 'AA',
+            '26-31-47' => 'SAM', '26-31-48' => 'MS',
+            'MNI' => 'MNI', 'MGM' => 'MGM', 'YAA' => 'YAA', 'TT' => 'TT', 'SA' => 'SA',
+            'SHT' => 'SHT', 'MMH' => 'MMH', 'MJM' => 'MJM', 'AI' => 'AI', 'NM' => 'NM',
+        ];
+        $employeePasswords = array_fill_keys(array_keys($shortNames), '12345678');
 
         foreach ([
             ['22-71-08', 'Dr. Md. Nayem Alimul Hyder', 'Associate Professor and Head of the Department', 'Law', true],
@@ -58,15 +74,16 @@ class RosterPersonSeeder extends Seeder
             ['24-71-15', 'Lamia Dilshad Waziha', 'Lecturer', 'Law', true],
             ['25-71-17', 'Saimur Rahman', 'Lecturer', 'Law', true],
             ['26-71-19', 'Sadd Been Hossain Fahim', 'Lecturer', 'Law', true],
-            ['26-41-36', 'Anisur Rahman', 'Lecturer', 'English', true, 'ANR'],
+            ['26-41-36', 'Nafis Ahmed Bhuiyan', 'Lecturer', 'English', true],
+            ['26-41-37', 'Anisur Rahman', 'Lecturer', 'English', true],
             ['24-11-61', 'Saad Bin Kamal', 'Lecturer', 'Computer Science & Engineering', true],
             ['25-42-41', 'Sharmin Akter', 'Lecturer', 'Science & Humanities', true],
             ['26-42-49', 'Nazmul Alam Ridoy', 'Lecturer', 'Science & Humanities', true],
             ['26-71-20', 'Saud Hasan', 'District & Sessions Judge', 'Adjunct Faculty', true],
             ['26-71-21', 'Dr. Jannatul Ferdous', 'Professor, Comilla University', 'Adjunct Faculty', true],
-            ['26-71-23', 'Sabbir Ahmed Mukim', 'Advocate', 'Law', true],
-            ['26-71-22', 'Rafiqul Islam Hossaini', 'Advocate', 'Adjunct Faculty', false],
-            ['26-71-24', 'Manik Das', 'Joint District & Sessions Judge', 'Law', true],
+            ['26-71-23', 'Sabbir Ahmed Mukim', 'Advocate', 'Adjunct Faculty', true],
+            ['26-71-22', 'Rafiqul Islam Hossaini', 'Advocate', 'Adjunct Faculty', true],
+            ['26-71-24', 'Manik Das', 'Joint District & Sessions Judge', 'Adjunct Faculty', true],
             ['18-31-16', 'Dr. Md. Tahidur Rahman', 'Professor & Dean', 'Business Administration', true],
             ['16-31-003', 'Dr. Fatema Johara', 'Professor & Head', 'Business Administration', true],
             ['16-31-007', 'Dr. Mohammad Shariful Islam', 'Associate Professor', 'Business Administration', true],
@@ -116,7 +133,7 @@ class RosterPersonSeeder extends Seeder
                 ['EmployeeCode' => $employeeCode],
                 [
                     'PersonName' => $personName,
-                    'ShortName' => $zktUserId ?: null,
+                    'ShortName' => $shortNames[$employeeCode] ?? $zktUserId ?: null,
                     'RoleName' => $designation,
                     'DepartmentName' => $department,
                     'DepartmentID' => $departmentIds[$department],
@@ -133,7 +150,7 @@ class RosterPersonSeeder extends Seeder
                 $personId = DB::table('tblRosterPerson')->where('EmployeeCode', $employeeCode)->value('RosterPersonID');
                 User::updateOrCreate(
                     ['email' => $employeeEmails[$employeeCode]],
-                    ['name' => $personName, 'password' => Hash::make('123456'), 'role' => 'employee', 'RosterPersonID' => $personId]
+                    ['name' => $personName, 'password' => Hash::make($employeePasswords[$employeeCode] ?? '123456'), 'role' => 'employee', 'RosterPersonID' => $personId]
                 );
             }
         }

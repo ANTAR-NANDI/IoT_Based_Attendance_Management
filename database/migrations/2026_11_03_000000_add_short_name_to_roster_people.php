@@ -9,14 +9,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tblRosterPerson', function (Blueprint $table) {
-            $table->string('ShortName', 30)->nullable()->unique()->after('PersonName');
+            $table->string('ShortName', 30)->nullable()->index()->after('PersonName');
         });
     }
 
     public function down(): void
     {
         Schema::table('tblRosterPerson', function (Blueprint $table) {
-            $table->dropUnique(['ShortName']);
+            $table->dropIndex(['ShortName']);
             $table->dropColumn('ShortName');
         });
     }

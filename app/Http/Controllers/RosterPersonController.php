@@ -60,7 +60,7 @@ class RosterPersonController extends Controller
         $data = $request->validate([
             'EmployeeCode' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'EmployeeCode')->ignore($person?->RosterPersonID, 'RosterPersonID')],
             'PersonName' => ['required', 'max:150'],
-            'ShortName' => ['nullable', 'max:30', Rule::unique('tblRosterPerson', 'ShortName')->ignore($person?->RosterPersonID, 'RosterPersonID')],
+            'ShortName' => ['nullable', 'max:30'],
             'DepartmentID' => ['required', 'exists:tblDepartment,DepartmentID'],
             'DesignationID' => ['required', 'exists:tblDesignation,DesignationID'],
             'ZKUserID' => ['nullable', 'max:50', Rule::unique('tblRosterPerson', 'ZKUserID')->ignore($person?->RosterPersonID, 'RosterPersonID')],
