@@ -25,8 +25,7 @@ class DesignationSeeder extends Seeder
             'Lab Technician',
             'Computer Operator',
             'Lab Assistant',
-            'Lab Attendant',
-            'Messenger',
+            'Lab Attendant'
         ]);
 
         foreach ($designations as $designation) {
