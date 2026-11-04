@@ -21,12 +21,106 @@ class RoutineImportController extends Controller
 
     public function template()
     {
-        $response = response()->download(public_path('templates/routine-import-template.xlsx'), 'routine-import-template.xlsx');
-        $response->headers->set('Cache-Control', 'no-store, no-cache, must-revalidate, max-age=0');
-        $response->headers->set('Pragma', 'no-cache');
-        $response->headers->set('Expires', '0');
+        $template = public_path('templates/routine-import-template.xlsx');
+        $teachers = DB::table('tblRosterPerson')
+            ->where('Status', 1)
+            ->whereNotNull('EmployeeCode')
+            ->where('EmployeeCode', '<>', '')
+            ->orderBy('PersonName')
+            ->orderBy('EmployeeCode')
+            ->get(['PersonName', 'ShortName', 'EmployeeCode']);
 
-        return $response;
+        return response()->streamDownload(function () use ($template, $teachers) {
+            $temporaryTemplate = tempnam(storage_path('app'), 'routine-template-');
+
+            try {
+                if ($temporaryTemplate === false || !copy($template, $temporaryTemplate)) {
+                    throw new \RuntimeException('The Excel template could not be prepared.');
+                }
+
+                $this->refreshTeacherWorksheet($temporaryTemplate, $teachers->all());
+                readfile($temporaryTemplate);
+            } finally {
+                if ($temporaryTemplate && file_exists($temporaryTemplate)) {
+                    unlink($temporaryTemplate);
+                }
+            }
+        }, 'routine-import-template.xlsx', [
+            'Cache-Control' => 'no-store, no-cache, must-revalidate, max-age=0',
+            'Pragma' => 'no-cache',
+            'Expires' => '0',
+        ]);
+    }
+
+    /** Refreshes the reference-only Teachers worksheet without changing routine rows. */
+    private function refreshTeacherWorksheet(string $path, array $teachers): void
+    {
+        if (!class_exists(\ZipArchive::class)) {
+            throw new \RuntimeException('Excel template downloads need the PHP ZIP extension.');
+        }
+
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) {
+            throw new \RuntimeException('The Excel template could not be opened.');
+        }
+
+        try {
+            $lastRow = max(2, count($teachers) + 1);
+            $zip->addFromString('xl/worksheets/sheet2.xml', $this->teacherWorksheetXml($teachers, $lastRow));
+
+            $workbook = $zip->getFromName('xl/workbook.xml');
+            $routineSheet = $zip->getFromName('xl/worksheets/sheet1.xml');
+            if ($workbook === false || $routineSheet === false) {
+                throw new \RuntimeException('The Excel template is missing a required worksheet.');
+            }
+
+            $workbook = preg_replace_callback(
+                '/(<definedName name="Teacher(?:Names|ShortNames|Codes)">Teachers!\$[ABC]\$2:\$[ABC]\$)\d+(<\/definedName>)/',
+                fn (array $match) => $match[1].$lastRow.$match[2],
+                $workbook
+            );
+            $routineSheet = preg_replace_callback(
+                '/Teachers!\$A\$2:\$C\$\d+/',
+                fn () => 'Teachers!$A$2:$C$'.$lastRow,
+                $routineSheet
+            );
+
+            $zip->addFromString('xl/workbook.xml', $workbook);
+            $zip->addFromString('xl/worksheets/sheet1.xml', $routineSheet);
+        } finally {
+            $zip->close();
+        }
+    }
+
+    private function teacherWorksheetXml(array $teachers, int $lastRow): string
+    {
+        $rows = [$this->teacherWorksheetRow(1, ['Teacher Name', 'Short Name', 'Teacher Code'], 1)];
+        foreach ($teachers as $index => $teacher) {
+            $rows[] = $this->teacherWorksheetRow($index + 2, [
+                $teacher->PersonName,
+                $teacher->ShortName,
+                $teacher->EmployeeCode,
+            ], 3);
+        }
+
+        return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+            .'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" mc:Ignorable="x14ac" xmlns:x14ac="http://schemas.microsoft.com/office/spreadsheetml/2009/9/ac">'
+            .'<dimension ref="A1:C'.$lastRow.'"/><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/><selection pane="bottomLeft" activeCell="A2" sqref="A2"/></sheetView></sheetViews>'
+            .'<sheetFormatPr defaultRowHeight="15" x14ac:dyDescent="0.25"/><cols><col min="1" max="1" width="34.7109375" customWidth="1"/><col min="2" max="3" width="16.7109375" customWidth="1"/></cols>'
+            .'<sheetData>'.implode('', $rows).'</sheetData><pageMargins left="0.7" right="0.7" top="0.75" bottom="0.75" header="0.3" footer="0.3"/></worksheet>';
+    }
+
+    private function teacherWorksheetRow(int $rowNumber, array $values, int $style): string
+    {
+        $cells = '';
+        foreach (['A', 'B', 'C'] as $index => $column) {
+            $value = (string) ($values[$index] ?? '');
+            $cells .= '<c r="'.$column.$rowNumber.'" s="'.$style.'" t="inlineStr"><is><t'
+                .(preg_match('/^\s|\s$/u', $value) ? ' xml:space="preserve"' : '')
+                .'>'.htmlspecialchars($value, ENT_XML1 | ENT_QUOTES, 'UTF-8').'</t></is></c>';
+        }
+
+        return '<row r="'.$rowNumber.'" spans="1:3" x14ac:dyDescent="0.25">'.$cells.'</row>';
     }
 
     public function store(Request $request)
