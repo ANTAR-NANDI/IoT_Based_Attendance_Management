@@ -68,6 +68,7 @@ class RosterReportController extends Controller
         $assignments = $query->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
 
         $logs = $assignments->isEmpty() ? collect() : DB::table('tblAttendanceLog')
+            ->select('DeviceID', 'EmployeeID', 'PunchTime')
             ->whereIn('DeviceID', $assignments->pluck('DeviceID')->filter()->unique())
             ->whereBetween('PunchTime', [Carbon::parse($fromDate)->subDay(), Carbon::parse($toDate)->endOfDay()->addDay()])
             ->orderBy('PunchTime')->get()->groupBy('DeviceID');

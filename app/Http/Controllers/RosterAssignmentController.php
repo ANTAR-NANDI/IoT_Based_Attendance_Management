@@ -15,7 +15,9 @@ class RosterAssignmentController extends Controller
         $month = $request->input('month', now()->format('Y-m'));
         $assignments = $this->baseQuery()
             ->whereBetween('ra.RosterDate', [Carbon::parse($month.'-01')->startOfMonth()->toDateString(), Carbon::parse($month.'-01')->endOfMonth()->toDateString()])
-            ->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
+            ->orderBy('ra.RosterDate')->orderBy('ra.StartTime')
+            ->paginate(50)
+            ->withQueryString();
         return view('roster.assignments.index', compact('assignments', 'month'));
     }
 

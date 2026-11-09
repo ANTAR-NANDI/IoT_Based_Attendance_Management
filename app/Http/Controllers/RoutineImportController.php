@@ -146,10 +146,11 @@ class RoutineImportController extends Controller
 
         $settings = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
         DB::transaction(function () use ($routines, $input, $settings) {
+            $batch = [];
             foreach ($routines as $routine) {
                 $seriesId = (string) Str::uuid();
                 foreach ($this->occurrences($input['StartDate'], $input['EndDate'], $routine['weekday']) as $date) {
-                    DB::table('tblRosterAssignment')->insert([
+                    $batch[] = [
                         'RosterSeriesID' => $seriesId, 'RosterDate' => $date, 'SeriesStartDate' => $input['StartDate'], 'SeriesEndDate' => $input['EndDate'],
                         'RepeatMode' => 'Weekly', 'Weekdays' => json_encode([$routine['weekday']]), 'RosterPersonID' => $routine['teacher']->RosterPersonID,
                         'ProxyPersonID' => null, 'RosterShiftID' => null, 'RosterLocationID' => $routine['room']->RosterLocationID, 'DeviceID' => $routine['room']->DeviceID,
@@ -158,8 +159,17 @@ class RoutineImportController extends Controller
                         'EntryEarlyMinutes' => $settings->EntryEarlyMinutes, 'EntryLateMinutes' => $settings->EntryLateMinutes,
                         'ExitEarlyMinutes' => $settings->ExitEarlyMinutes, 'ExitLateMinutes' => $settings->ExitLateMinutes,
                         'Status' => 'Active', 'Remarks' => $routine['remarks'], 'created_at' => now(), 'updated_at' => now(),
-                    ]);
+                    ];
+
+                    if (count($batch) === 500) {
+                        DB::table('tblRosterAssignment')->insert($batch);
+                        $batch = [];
+                    }
                 }
+            }
+
+            if ($batch) {
+                DB::table('tblRosterAssignment')->insert($batch);
             }
         });
 

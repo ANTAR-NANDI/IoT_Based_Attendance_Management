@@ -62,6 +62,9 @@ class SyncZktAttendance extends Command
         }
 
         $transactions->chunkById(250, function ($rows) use (&$imported, &$skipped, &$unmatchedSerials, $deviceIdsBySerial) {
+            $payload = [];
+            $syncedAt = now();
+
             foreach ($rows as $transaction) {
                 $employeeId = trim((string) $transaction->emp_code);
 
@@ -79,28 +82,33 @@ class SyncZktAttendance extends Command
                     $unmatchedSerials[$serial] = true;
                 }
 
-                DB::table('tblAttendanceLog')->updateOrInsert(
-                    ['ZKTTransactionID' => $transaction->id],
-                    [
-                        'EmployeeID' => (int) $employeeId,
-                        'DeviceID' => $deviceId,
-                        'DeviceSerialNo' => $serial ?: null,
-                        'PunchTime' => $transaction->punch_time,
-                        'PunchState' => is_numeric($transaction->punch_state) ? (int) $transaction->punch_state : null,
-                        'VerifyMode' => $transaction->verify_type,
-                        'WorkCode' => $transaction->work_code,
-                        'Temperature' => $transaction->temperature,
-                        // ZKT uses 255 for an unknown mask state; retain that as NULL.
-                        'Mask' => in_array((int) $transaction->is_mask, [0, 1], true) ? (int) $transaction->is_mask : null,
-                        'UploadSource' => 'ZKTeco',
-                        'SyncTime' => now(),
-                        'IsProcessed' => false,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]
-                );
+                $payload[] = [
+                    'ZKTTransactionID' => $transaction->id,
+                    'EmployeeID' => (int) $employeeId,
+                    'DeviceID' => $deviceId,
+                    'DeviceSerialNo' => $serial ?: null,
+                    'PunchTime' => $transaction->punch_time,
+                    'PunchState' => is_numeric($transaction->punch_state) ? (int) $transaction->punch_state : null,
+                    'VerifyMode' => $transaction->verify_type,
+                    'WorkCode' => $transaction->work_code,
+                    'Temperature' => $transaction->temperature,
+                    // ZKT uses 255 for an unknown mask state; retain that as NULL.
+                    'Mask' => in_array((int) $transaction->is_mask, [0, 1], true) ? (int) $transaction->is_mask : null,
+                    'UploadSource' => 'ZKTeco',
+                    'SyncTime' => $syncedAt,
+                    'IsProcessed' => false,
+                    'created_at' => $syncedAt,
+                    'updated_at' => $syncedAt,
+                ];
+            }
 
-                $imported++;
+            if ($payload) {
+                DB::table('tblAttendanceLog')->upsert($payload, ['ZKTTransactionID'], [
+                    'EmployeeID', 'DeviceID', 'DeviceSerialNo', 'PunchTime', 'PunchState',
+                    'VerifyMode', 'WorkCode', 'Temperature', 'Mask', 'UploadSource',
+                    'SyncTime', 'IsProcessed', 'updated_at',
+                ]);
+                $imported += count($payload);
             }
         }, 'transaction.id', 'id');
 

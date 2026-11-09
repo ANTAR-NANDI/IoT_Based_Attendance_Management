@@ -137,6 +137,7 @@ class AttendanceLogController extends Controller
         }
 
         $logs = DB::table('tblAttendanceLog')
+            ->select('DeviceID', 'EmployeeID', 'PunchTime')
             ->whereIn('DeviceID', $routines->pluck('DeviceID')->unique())
             ->whereBetween('PunchTime', [
                 Carbon::parse($fromDate)->subMinutes($grace['entry_early_minutes']),
