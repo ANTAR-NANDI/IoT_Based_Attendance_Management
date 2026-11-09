@@ -12,47 +12,52 @@ class RosterLocationReportController extends RosterReportController
     public function index(Request $request)
     {
         $request->validate([
-            'report_date' => ['nullable', 'date'],
+            'from_date' => ['nullable', 'date'],
+            'to_date' => ['nullable', 'date', 'after_or_equal:from_date'],
             'RosterLocationIDs' => ['nullable', 'array'],
             'RosterLocationIDs.*' => ['exists:tblRosterLocation,RosterLocationID'],
         ]);
-        $reportDate = $request->input('report_date', now()->toDateString());
+        $fromDate = $request->input('from_date', now()->toDateString());
+        $toDate = $request->input('to_date', $fromDate);
         $locations = DB::table('tblRosterLocation')->where('Status', 1)->orderBy('LocationName')->get();
         $locationIds = collect($request->input('RosterLocationIDs', []))->map(fn ($id) => (int) $id)->unique()->values();
         $selectedLocations = $locations->whereIn('RosterLocationID', $locationIds->all())->values();
         $rows = $locationIds->isNotEmpty()
-            ? $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()))
+            ? $this->attendanceRows($fromDate, $toDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()))
             : collect();
         $matrix = $this->scheduleMatrix($rows);
 
-        return view('roster.reports.location', compact('reportDate', 'locations', 'locationIds', 'selectedLocations', 'rows', 'matrix'));
+        return view('roster.reports.location', compact('fromDate', 'toDate', 'locations', 'locationIds', 'selectedLocations', 'rows', 'matrix'));
     }
 
     public function exportPdf(Request $request)
     {
         $request->validate([
-            'report_date' => ['required', 'date'],
+            'from_date' => ['required', 'date'],
+            'to_date' => ['required', 'date', 'after_or_equal:from_date'],
             'RosterLocationIDs' => ['required', 'array', 'min:1'],
             'RosterLocationIDs.*' => ['exists:tblRosterLocation,RosterLocationID'],
         ]);
-        $reportDate = $request->report_date;
+        $fromDate = $request->from_date;
+        $toDate = $request->to_date;
         $locationIds = collect($request->RosterLocationIDs)->map(fn ($id) => (int) $id)->unique()->values();
         $selectedLocations = DB::table('tblRosterLocation')->whereIn('RosterLocationID', $locationIds)->orderBy('LocationName')->get();
-        $rows = $this->attendanceRows($reportDate, $reportDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()));
+        $rows = $this->attendanceRows($fromDate, $toDate, fn ($query) => $query->whereIn('ra.RosterLocationID', $locationIds->all()));
         $matrix = $this->scheduleMatrix($rows);
         $title = 'Room-wise Attendance Report';
-        $subtitle = $selectedLocations->pluck('LocationName')->join(', ').' - '.\Carbon\Carbon::parse($reportDate)->format('d M Y');
+        $subtitle = $selectedLocations->pluck('LocationName')->join(', ').' - '.\Carbon\Carbon::parse($fromDate)->format('d M Y').' to '.\Carbon\Carbon::parse($toDate)->format('d M Y');
         return Pdf::loadView('roster.reports.room-matrix-pdf', compact('matrix', 'selectedLocations', 'title', 'subtitle'))
             ->setPaper('a4', 'portrait')
-            ->stream("room-attendance-{$reportDate}.pdf");
+            ->stream("room-attendance-{$fromDate}-to-{$toDate}.pdf");
     }
     private function scheduleMatrix($rows)
     {
         $slots = [];
         foreach ($rows as $row) {
-            $key = $row['StartRaw'].'|'.$row['EndRaw'];
+            $key = $row['RosterDate'].'|'.$row['StartRaw'].'|'.$row['EndRaw'];
             if (!isset($slots[$key])) {
                 $slots[$key] = [
+                    'Date' => $row['RosterDate'],
                     'Start' => $row['Start'],
                     'End' => $row['End'],
                     'StartRaw' => $row['StartRaw'],
@@ -62,7 +67,7 @@ class RosterLocationReportController extends RosterReportController
             $slots[$key]['rooms'][$row['RosterLocationID']] = $row;
         }
 
-        uasort($slots, fn ($left, $right) => strcmp($left['StartRaw'], $right['StartRaw']));
+        uasort($slots, fn ($left, $right) => strcmp($left['Date'].' '.$left['StartRaw'], $right['Date'].' '.$right['StartRaw']));
         return collect($slots)->values();
     }
 }

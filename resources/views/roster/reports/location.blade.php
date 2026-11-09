@@ -13,14 +13,18 @@
 <div class="space-y-6">
     <div>
         <h1 class="text-2xl font-bold">Room-wise Attendance Report</h1>
-        <p class="text-sm text-slate-500">Select one or more rooms to compare their scheduled classes in the same time slots.</p>
+        <p class="text-sm text-slate-500">Select a date range and one or more rooms to compare their scheduled classes in the same time slots.</p>
     </div>
 
     <form class="rounded-xl border bg-white p-5" method="GET" action="{{ route('reports.room-attendance') }}">
-        <div class="grid gap-4 md:grid-cols-[220px_1fr_auto]">
+        <div class="grid gap-4 md:grid-cols-[180px_180px_1fr_auto]">
             <div>
-                <label class="text-xs font-semibold">Date</label>
-                <input type="date" name="report_date" value="{{ $reportDate }}" class="mt-1 w-full rounded border p-2">
+                <label class="text-xs font-semibold">From date</label>
+                <input type="date" name="from_date" value="{{ $fromDate }}" class="mt-1 w-full rounded border p-2">
+            </div>
+            <div>
+                <label class="text-xs font-semibold">To date</label>
+                <input type="date" name="to_date" value="{{ $toDate }}" class="mt-1 w-full rounded border p-2">
             </div>
             <div>
                 <label class="text-xs font-semibold">Room No.</label>
@@ -45,7 +49,7 @@
             <table class="w-full table-fixed border-collapse text-sm">
                 <thead class="bg-slate-800 text-white">
                     <tr>
-                        <th style="width: 150px" class="border-r border-slate-500 px-3 py-3 text-left">Time slot</th>
+                        <th style="width: 180px" class="border-r border-slate-500 px-3 py-3 text-left">Date &amp; time slot</th>
                         @foreach($selectedLocations as $location)
                             <th style="width: 220px" class="border-r border-slate-500 px-3 py-3 text-left">{{ $location->LocationName }}</th>
                         @endforeach
@@ -54,7 +58,7 @@
                 <tbody>
                     @forelse($matrix as $slot)
                         <tr class="border-t align-top">
-                            <td class="border-r bg-slate-100 px-3 py-4 font-bold text-slate-800">{{ $slot['Start'] }} - {{ $slot['End'] }}</td>
+                            <td class="border-r bg-slate-100 px-3 py-4 font-bold text-slate-800"><div>{{ \Carbon\Carbon::parse($slot['Date'])->format('d M Y') }}</div><div class="mt-1 text-xs font-medium text-slate-600">{{ $slot['Start'] }} - {{ $slot['End'] }}</div></td>
                             @foreach($selectedLocations as $location)
                                 @php($row = $slot['rooms'][$location->RosterLocationID] ?? null)
                                 <td class="border-r p-1 {{ !$row ? 'bg-slate-200 text-center align-middle' : '' }}">
@@ -80,7 +84,7 @@
                             @endforeach
                         </tr>
                     @empty
-                        <tr><td colspan="{{ $selectedLocations->count() + 1 }}" class="p-10 text-center text-slate-500">No classes or duties are scheduled in the selected rooms for this date.</td></tr>
+                        <tr><td colspan="{{ $selectedLocations->count() + 1 }}" class="p-10 text-center text-slate-500">No classes or duties are scheduled in the selected rooms for this date range.</td></tr>
                     @endforelse
                 </tbody>
             </table>

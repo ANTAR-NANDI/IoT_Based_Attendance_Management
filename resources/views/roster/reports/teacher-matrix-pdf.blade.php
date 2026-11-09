@@ -19,11 +19,11 @@
     <h1>Army University - {{ $title }}</h1>
     <p>{{ $subtitle }}</p>
     <table>
-        <thead><tr><th class="time">Time slot</th>@foreach($selectedPeople as $person)<th>{{ $person->PersonName }}</th>@endforeach</tr></thead>
+        <thead><tr><th class="time">Date &amp; time slot</th>@foreach($selectedPeople as $person)<th>{{ $person->PersonName }}</th>@endforeach</tr></thead>
         <tbody>
             @forelse($matrix as $slot)
                 <tr>
-                    <td class="time">{{ $slot['Start'] }} - {{ $slot['End'] }}</td>
+                    <td class="time">{{ \Carbon\Carbon::parse($slot['Date'])->format('d M Y') }}<br>{{ $slot['Start'] }} - {{ $slot['End'] }}</td>
                     @foreach($selectedPeople as $person)
                         @php($row = $slot['people'][$person->RosterPersonID] ?? null)
                         @if(!$row)
