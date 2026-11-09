@@ -46,7 +46,14 @@ class SyncZktAttendance extends Command
 
         $transactions = DB::table('iclock_transaction as transaction')
             ->leftJoin('tblAttendanceLog as attendance', 'attendance.ZKTTransactionID', '=', 'transaction.id')
-            ->whereNull('attendance.AttendanceLogID')
+            // ZKT exports can correct/replay an existing transaction ID. Import
+            // new rows and refresh copies whose punch/device details changed.
+            ->where(function ($query) {
+                $query->whereNull('attendance.AttendanceLogID')
+                    ->orWhereRaw('attendance.PunchTime <> transaction.punch_time')
+                    ->orWhereRaw("COALESCE(attendance.PunchState, -1) <> COALESCE(transaction.punch_state, -1)")
+                    ->orWhereRaw("COALESCE(attendance.DeviceSerialNo, '') <> COALESCE(transaction.terminal_sn, '')");
+            })
             ->select('transaction.*')
             ->orderBy('transaction.id');
 
