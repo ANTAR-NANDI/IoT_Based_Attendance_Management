@@ -21,16 +21,28 @@ class SyncZktAttendance extends Command
         $deviceIdsBySerial = DB::table('tblDevice')
             ->whereNotNull('SerialNo')
             ->pluck('DeviceID', 'SerialNo')
-            ->mapWithKeys(fn ($id, $serial) => [trim((string) $serial) => $id]);
+            ->mapWithKeys(fn ($id, $serial) => [$this->normaliseSerial($serial) => $id]);
 
         // A device may be added or corrected after its punches were imported.
         // Repair only our copied rows; the ZKT source tables are never written to.
-        $deviceIdsBySerial->each(function ($deviceId, $serial) use (&$backfilledDeviceMappings) {
-            $backfilledDeviceMappings += DB::table('tblAttendanceLog')
-                ->whereNull('DeviceID')
-                ->where('DeviceSerialNo', $serial)
-                ->update(['DeviceID' => $deviceId, 'updated_at' => now()]);
-        });
+        DB::table('tblAttendanceLog')
+            ->select('AttendanceLogID', 'DeviceSerialNo')
+            ->whereNull('DeviceID')
+            ->whereNotNull('DeviceSerialNo')
+            ->orderBy('AttendanceLogID')
+            ->chunkById(250, function ($logs) use ($deviceIdsBySerial, &$backfilledDeviceMappings) {
+                foreach ($logs as $log) {
+                    $deviceId = $deviceIdsBySerial->get($this->normaliseSerial($log->DeviceSerialNo));
+                    if ($deviceId === null) {
+                        continue;
+                    }
+
+                    $backfilledDeviceMappings += DB::table('tblAttendanceLog')
+                        ->where('AttendanceLogID', $log->AttendanceLogID)
+                        ->whereNull('DeviceID')
+                        ->update(['DeviceID' => $deviceId, 'updated_at' => now()]);
+                }
+            }, 'AttendanceLogID');
 
         $transactions = DB::table('iclock_transaction as transaction')
             ->leftJoin('tblAttendanceLog as attendance', 'attendance.ZKTTransactionID', '=', 'transaction.id')
@@ -54,7 +66,7 @@ class SyncZktAttendance extends Command
                 }
 
                 $serial = trim((string) ($transaction->terminal_sn ?? ''));
-                $deviceId = $serial !== '' ? $deviceIdsBySerial->get($serial) : null;
+                $deviceId = $serial !== '' ? $deviceIdsBySerial->get($this->normaliseSerial($serial)) : null;
 
                 if ($serial !== '' && $deviceId === null) {
                     $unmatchedSerials[$serial] = true;
@@ -92,5 +104,10 @@ class SyncZktAttendance extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    private function normaliseSerial(mixed $serial): string
+    {
+        return strtoupper(trim((string) $serial));
     }
 }
