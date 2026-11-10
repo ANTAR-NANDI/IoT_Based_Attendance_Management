@@ -1,0 +1,15 @@
+php artisan serve
+C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe
+C:\laragon\www\IoT_Based_Attendance_Management\artisan serve --host=0.0.0.0 --port=8000
+C:\laragon\www\IoT_Based_Attendance_Management
+
+
+php artisan attendance:sync-zkt
+
+
+php artisan schedule:work
+
+C:\laragon\bin\php\php-8.3.16-Win32-vs16-x64\php.exe
+C:\laragon\www\IoT_Based_Attendance_Management\artisan schedule:work
+C:\laragon\www\IoT_Based_Attendance_Management
+
