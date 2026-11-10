@@ -21,7 +21,7 @@
 </div>
 @endsection
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="{{ asset('vendor/chartjs/chart.umd.min.js') }}"></script>
 <script>
 const accuracyLabels = @json($teacherAccuracy->keys()->values());
 const accuracyValues = @json($teacherAccuracy->values());
