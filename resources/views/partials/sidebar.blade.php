@@ -15,13 +15,15 @@
             ['route' => 'roster.shifts.index', 'label' => 'Shift Management'],
             ['route' => 'roster.settings.edit', 'label' => 'Attendance Grace Settings'],
             ['route' => 'roster.assignments.index', 'label' => 'Routine Setup'],
+            ['route' => 'holidays.index', 'label' => 'Holiday Management'],
             ['route' => 'roster.rotation.create', 'label' => 'Security Guard Rotation'],
             ['heading' => 'Reports'],
             ['route' => 'reports.roster-attendance', 'label' => 'Roster Attendance Report'],
             ['route' => 'reports.room-attendance', 'label' => 'Room-wise Attendance'],
             ['route' => 'reports.teacher-attendance', 'label' => 'Teacher-wise Attendance'],
         ] : [
-            ['route' => 'employee.attendance', 'label' => 'My Attendance'],
+            ['route' => 'employee.attendance', 'label' => 'Dashboard', 'active' => 'employee.attendance'],
+            ['route' => 'employee.attendance.report', 'label' => 'My Reports', 'active' => 'employee.attendance.report*'],
         ];
     @endphp
     <nav class="flex-1 space-y-1 overflow-y-auto px-3 py-5">
@@ -29,7 +31,7 @@
             @if(isset($item['heading']))
                 <div class="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $item['heading'] }}</div>
             @else
-                <a href="{{ route($item['route']) }}" class="block rounded-lg px-4 py-2.5 text-sm font-medium {{ request()->routeIs($item['route'].'*') ? 'bg-indigo-600/20 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">{{ $item['label'] }}</a>
+                <a href="{{ route($item['route']) }}" class="block rounded-lg px-4 py-2.5 text-sm font-medium {{ request()->routeIs($item['active'] ?? $item['route'].'*') ? 'bg-indigo-600/20 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">{{ $item['label'] }}</a>
             @endif
         @endforeach
     </nav>

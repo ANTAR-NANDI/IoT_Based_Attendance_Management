@@ -31,6 +31,6 @@ const accuracyChartWrapper = document.getElementById('accuracyChartWrapper');
 // Allocate a readable row to every teacher so large rosters do not compress labels.
 accuracyChartWrapper.style.height = Math.max(360, accuracyLabels.length * 38 + 80) + 'px';
 new Chart(document.getElementById('accuracyChart'), { type: 'bar', data: { labels: accuracyLabels, datasets: [{ label: 'Accuracy %', data: accuracyValues, backgroundColor: '#2563eb', borderRadius: 6 }] }, options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, scales: { x: { beginAtZero: true, max: 100, ticks: { callback: value => value + '%' } }, y: { ticks: { autoSkip: false } } }, plugins: { legend: { display: false }, tooltip: { callbacks: { label: context => context.parsed.x + '%' } } } } });
-new Chart(document.getElementById('statusChart'), { type: 'pie', data: { labels: statusLabels, datasets: [{ data: statusValues, backgroundColor: ['#059669','#d97706','#64748b','#dc2626'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
+new Chart(document.getElementById('statusChart'), { type: 'pie', data: { labels: statusLabels, datasets: [{ data: statusValues, backgroundColor: ['#059669','#d97706','#64748b','#dc2626','#7c3aed'] }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } } });
 </script>
 @endpush

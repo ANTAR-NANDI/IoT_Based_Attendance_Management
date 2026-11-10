@@ -40,7 +40,8 @@ class RosterReportController extends Controller
 
     protected function summaryFor($rows)
     {
-        return $rows->groupBy(fn ($row) => $row['RoleName'].'|'.$row['PersonName'])->map(function ($items) {
+        return $rows->reject(fn ($row) => $row['Status'] === 'Holiday')
+            ->groupBy(fn ($row) => $row['RoleName'].'|'.$row['PersonName'])->map(function ($items) {
             return [
                 'RoleName' => $items->first()['RoleName'], 'PersonName' => $items->first()['PersonName'],
                 'Scheduled' => $items->count(), 'Present' => $items->where('Status', 'Present')->count(),
@@ -49,7 +50,7 @@ class RosterReportController extends Controller
                 'Absent' => $items->whereIn('Status', ['Absent', 'Late - Absent'])->count(),
                 'ScheduledMinutes' => $items->sum('ScheduledMinutes'), 'ActualMinutes' => $items->sum('ActualMinutes'), 'ShortMinutes' => $items->sum('ShortMinutes'),
             ];
-        })->values();
+            })->values();
     }
 
     protected function attendanceRows(string $fromDate, string $toDate, ?callable $filter = null)
@@ -67,6 +68,14 @@ class RosterReportController extends Controller
         if ($filter) $filter($query);
         $assignments = $query->orderBy('ra.RosterDate')->orderBy('ra.StartTime')->get();
 
+        $holidays = DB::table('tblHolidaySetup')
+            ->whereBetween('holidaydate', [$fromDate, $toDate])
+            ->pluck('HolidayName', 'holidaydate');
+        $weeklyHolidayDays = collect(json_decode(
+            DB::table('tblHolidaySetting')->where('id', 1)->value('WeeklyHolidayDays') ?? '[]',
+            true
+        ))->map(fn ($day) => (int) $day);
+
         $logs = $assignments->isEmpty() ? collect() : DB::table('tblAttendanceLog')
             ->select('DeviceID', 'EmployeeID', 'PunchTime')
             ->whereIn('DeviceID', $assignments->pluck('DeviceID')->filter()->unique())
@@ -74,10 +83,16 @@ class RosterReportController extends Controller
             ->orderBy('PunchTime')->get()->groupBy('DeviceID');
 
         $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
-        return $assignments->map(fn ($assignment) => $this->evaluate($assignment, $logs, $grace));
+        return $assignments->map(fn ($assignment) => $this->evaluate(
+            $assignment,
+            $logs,
+            $grace,
+            $holidays->get($assignment->RosterDate)
+                ?? ($weeklyHolidayDays->contains(Carbon::parse($assignment->RosterDate)->dayOfWeek) ? 'Weekly Holiday' : null)
+        ));
     }
 
-    protected function evaluate($a, $logs, $grace): array
+    protected function evaluate($a, $logs, $grace, ?string $holidayName = null): array
     {
         $start = Carbon::parse($a->RosterDate.' '.$a->StartTime);
         $end = Carbon::parse($a->RosterDate.' '.$a->EndTime);
@@ -87,7 +102,8 @@ class RosterReportController extends Controller
         $exitOpen = $end->copy()->subMinutes($grace->ExitEarlyMinutes);
         $exitClose = $end->copy()->addMinutes($grace->ExitLateMinutes)->endOfMinute();
         $deviceLogs = ($logs->get($a->DeviceID) ?? collect())->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $exitClose))->values();
-        $result = ['RosterDate' => $a->RosterDate, 'RosterPersonID' => $a->RosterPersonID, 'RosterLocationID' => $a->RosterLocationID, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('H:i A'), 'StartRaw' => $start->format('H:i:s'), 'EndRaw' => $end->format('H:i:s'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent'), 'ScheduledMinutes' => $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null, 'EarlyOutSeconds' => null];
+        $result = ['RosterDate' => $a->RosterDate, 'RosterPersonID' => $a->RosterPersonID, 'RosterLocationID' => $a->RosterLocationID, 'PersonName' => $a->PersonName, 'RoleName' => $a->RoleName, 'ProxyPersonName' => $a->ProxyPersonName, 'LocationName' => $a->LocationName, 'DeviceName' => $a->DeviceName, 'AcademicDepartmentName' => $a->AcademicDepartmentName, 'BatchName' => $a->BatchName, 'AcademicSession' => $a->AcademicSession, 'AcademicSemester' => $a->AcademicSemester, 'SubjectCode' => $a->SubjectCode, 'SubjectName' => $a->SubjectName, 'AssignmentType' => $a->AssignmentType, 'Start' => $start->format('h:i A'), 'End' => $end->format('H:i A'), 'StartRaw' => $start->format('H:i:s'), 'EndRaw' => $end->format('H:i:s'), 'CheckIn' => null, 'CheckOut' => null, 'ActualPerson' => null, 'Status' => $holidayName ? 'Holiday' : (now()->lt($start) ? 'Upcoming' : (now()->lte($entryClose) ? 'Running' : 'Absent')), 'HolidayName' => $holidayName, 'ScheduledMinutes' => $holidayName ? 0 : $start->diffInMinutes($end), 'ActualMinutes' => 0, 'ShortMinutes' => $holidayName ? 0 : $start->diffInMinutes($end), 'LateMinutes' => null, 'EarlyOutMinutes' => null, 'EarlyOutSeconds' => null];
+        if ($holidayName) return $result;
         foreach ([['zk' => $a->ZKUserID, 'name' => $a->PersonName, 'proxy' => false], ['zk' => $a->ProxyZKUserID, 'name' => $a->ProxyPersonName, 'proxy' => true]] as $candidate) {
             if (!$candidate['zk']) continue;
             $personLogs = $deviceLogs->filter(fn ($log) => (string) $log->EmployeeID === (string) $candidate['zk'])->values();

@@ -13,8 +13,31 @@ class HolidayController extends Controller
         $holidays = DB::table('tblHolidaySetup')
             ->orderBy('id', 'DESC')
             ->paginate(10);
+        $weeklyHolidayDays = collect(json_decode(
+            DB::table('tblHolidaySetting')->where('id', 1)->value('WeeklyHolidayDays') ?? '[]',
+            true
+        ))->map(fn ($day) => (int) $day)->all();
 
-        return view('holidays.index', compact('holidays'));
+        return view('holidays.index', compact('holidays', 'weeklyHolidayDays'));
+    }
+
+    public function updateWeeklySettings(Request $request)
+    {
+        $data = $request->validate([
+            'WeeklyHolidayDays' => ['nullable', 'array'],
+            'WeeklyHolidayDays.*' => ['integer', 'between:0,6'],
+        ]);
+
+        DB::table('tblHolidaySetting')->updateOrInsert(
+            ['id' => 1],
+            [
+                'WeeklyHolidayDays' => json_encode(array_values(array_unique($data['WeeklyHolidayDays'] ?? []))),
+                'updated_at' => now(),
+                'created_at' => now(),
+            ]
+        );
+
+        return redirect()->route('holidays.index')->with('success', 'Weekly holiday settings updated successfully.');
     }
 
     public function create()

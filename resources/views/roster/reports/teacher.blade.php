@@ -65,13 +65,14 @@
                                     @if(!$row)
                                         <span class="text-xs font-semibold text-slate-600">Not scheduled</span>
                                     @else
-                                        @php($colors = match($row['Status']) { 'Present' => 'border-blue-700 bg-blue-200', 'Absent' => 'border-red-700 bg-red-200', 'Proxy' => 'border-amber-700 bg-amber-200', 'No Punch-out' => 'border-orange-700 bg-orange-200', 'Upcoming' => 'border-violet-700 bg-violet-200', 'Running' => 'border-emerald-700 bg-emerald-200', default => 'border-slate-600 bg-slate-200' })
+                                        @php($colors = match($row['Status']) { 'Present' => 'border-blue-700 bg-blue-200', 'Absent' => 'border-red-700 bg-red-200', 'Proxy' => 'border-amber-700 bg-amber-200', 'No Punch-out' => 'border-orange-700 bg-orange-200', 'Holiday' => 'border-violet-700 bg-violet-100', 'Upcoming' => 'border-violet-700 bg-violet-200', 'Running' => 'border-emerald-700 bg-emerald-200', default => 'border-slate-600 bg-slate-200' })
                                         <div class="w-full rounded-lg border-2 {{ $colors }} p-3 text-slate-900">
                                             <div class="font-bold">{{ $row['SubjectName'] ? $row['SubjectCode'].' - '.$row['SubjectName'] : $row['AssignmentType'] }}</div>
                                             <div class="mt-1 text-sm font-medium">Room: {{ $row['LocationName'] ?? '-' }}</div>
                                             <div class="text-xs">{{ $row['BatchName'] ? $row['BatchName'].($row['AcademicSemester'] ? ', Sem '.$row['AcademicSemester'] : '') : '' }}</div>
                                             <div class="mt-3 border-t border-slate-700/30 pt-2 text-sm"><strong>{{ $row['Status'] }}</strong>{{ (float) $row['ShortMinutes'] >= 5 ? ' · '.number_format((float) $row['ShortMinutes'], 2).' min short' : '' }}</div>
                                             <div class="text-xs">In: {{ $row['CheckIn'] ?? '-' }} · Out: {{ $row['CheckOut'] ?? '-' }}</div>
+                                            @if($row['Status'] === 'Holiday')<div class="mt-1 text-xs font-semibold text-violet-900">{{ $row['HolidayName'] }}</div>@endif
                                             @if($row['Status'] === 'Proxy' && $row['ActualPerson'])
                                                 <div class="mt-1 text-xs font-semibold text-amber-900">Proxy: {{ $row['ActualPerson'] }}</div>
                                             @endif

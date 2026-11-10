@@ -37,8 +37,10 @@ class DashboardController extends RosterReportController
             'Proxy' => $statusAttendanceRows->where('Status', 'Proxy')->count(),
             'No Punch-out' => $statusAttendanceRows->where('Status', 'No Punch-out')->count(),
             'Absent' => $statusAttendanceRows->where('Status', 'Absent')->count(),
+            'Holiday' => $statusAttendanceRows->where('Status', 'Holiday')->count(),
         ];
         $teacherAccuracy = $attendanceRows->groupBy('PersonName')->map(function ($rows) {
+            $rows = $rows->reject(fn ($row) => $row['Status'] === 'Holiday');
             $accurate = $rows->filter(fn ($row) => $row['Status'] === 'Present' && $row['LateMinutes'] === null && $row['EarlyOutMinutes'] === null)->count();
             return round($rows->isNotEmpty() ? ($accurate / $rows->count()) * 100 : 0, 1);
         })->sortDesc();

@@ -6,6 +6,7 @@ use App\Http\Controllers\Auth\PasswordResetOtpController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\DeviceController;
 use App\Http\Controllers\EmployeeAttendanceController;
+use App\Http\Controllers\HolidayController;
 use App\Http\Controllers\DepartmentController;
 use App\Http\Controllers\DesignationController;
 use App\Http\Controllers\BatchController;
@@ -38,6 +39,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::put('/my-profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::get('/my-attendance', [EmployeeAttendanceController::class, 'index'])->middleware('role:employee')->name('employee.attendance');
+    Route::get('/my-attendance/report', [EmployeeAttendanceController::class, 'report'])->middleware('role:employee')->name('employee.attendance.report');
+    Route::get('/my-attendance/pdf', [EmployeeAttendanceController::class, 'exportPdf'])->middleware('role:employee')->name('employee.attendance.pdf');
 
     Route::middleware('role:admin,superadmin')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -48,6 +51,8 @@ Route::middleware('auth')->group(function () {
     Route::resource('dashboard/designations', DesignationController::class);
     Route::resource('dashboard/batches', BatchController::class)->except('show')->names('batches');
     Route::resource('dashboard/subjects', SubjectController::class)->except('show')->names('subjects');
+    Route::resource('dashboard/holidays', HolidayController::class)->except('show')->names('holidays');
+    Route::put('dashboard/holidays/weekly-settings', [HolidayController::class, 'updateWeeklySettings'])->name('holidays.weekly-settings.update');
     Route::resource('dashboard/roster/people', RosterPersonController::class)->except('show')->names('roster.people');
     Route::resource('dashboard/roster/locations', RosterLocationController::class)->except('show', 'destroy')->names('roster.locations');
     Route::resource('dashboard/roster/shifts', RosterShiftController::class)->except('show', 'destroy')->names('roster.shifts');

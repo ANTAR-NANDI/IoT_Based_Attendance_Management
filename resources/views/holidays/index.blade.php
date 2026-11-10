@@ -27,6 +27,23 @@
 
     </div>
 
+    <div class="rounded-xl border border-slate-200 bg-white p-5 shadow">
+        <div>
+            <h2 class="font-semibold text-slate-800">Weekly Global Holidays</h2>
+            <p class="mt-1 text-sm text-slate-500">Selected days are automatically treated as Holiday in attendance reports. Friday and Saturday are selected by default.</p>
+        </div>
+        <form method="POST" action="{{ route('holidays.weekly-settings.update') }}" class="mt-4 flex flex-wrap items-end gap-4">
+            @csrf
+            @method('PUT')
+            <div class="flex flex-wrap gap-x-5 gap-y-2">
+                @foreach(['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'] as $dayNumber => $dayName)
+                    <label class="inline-flex items-center gap-2 text-sm text-slate-700"><input type="checkbox" name="WeeklyHolidayDays[]" value="{{ $dayNumber }}" @checked(in_array($dayNumber, $weeklyHolidayDays, true)) class="rounded border-slate-300 text-indigo-600 focus:ring-indigo-500">{{ $dayName }}</label>
+                @endforeach
+            </div>
+            <button class="rounded-lg bg-indigo-600 px-5 py-2 text-sm font-medium text-white hover:bg-indigo-700">Save weekly holidays</button>
+        </form>
+    </div>
+
     {{-- Search --}}
     <div class="bg-white rounded-xl shadow border border-slate-200 p-5">
 
