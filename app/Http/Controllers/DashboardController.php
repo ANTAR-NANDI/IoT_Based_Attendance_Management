@@ -44,6 +44,27 @@ class DashboardController extends RosterReportController
             $accurate = $rows->filter(fn ($row) => $row['Status'] === 'Present' && $row['LateMinutes'] === null && $row['EarlyOutMinutes'] === null)->count();
             return round($rows->isNotEmpty() ? ($accurate / $rows->count()) * 100 : 0, 1);
         })->sortDesc();
+        $todayDate = now()->toDateString();
+        $todayRows = ($fromDate === $todayDate && $toDate === $todayDate)
+            ? $attendanceRows
+            : $this->attendanceRows($todayDate, $todayDate);
+        $todayTeacherCounts = ['Scheduled' => 0, 'Present' => 0, 'Absent' => 0, 'Proxy' => 0, 'Pending' => 0];
+        foreach ($todayRows->reject(fn ($row) => $row['Status'] === 'Holiday')->groupBy('RosterPersonID') as $teacherRows) {
+            $todayTeacherCounts['Scheduled']++;
+            $hasAttendance = $teacherRows->whereIn('Status', ['Present', 'No Punch-out'])->isNotEmpty();
+            $hasPendingDuty = $teacherRows->whereIn('Status', ['Upcoming', 'Running'])->isNotEmpty();
+            $hasProxy = $teacherRows->where('Status', 'Proxy')->isNotEmpty();
+
+            if ($hasAttendance) {
+                $todayTeacherCounts['Present']++;
+            } elseif ($hasProxy) {
+                $todayTeacherCounts['Proxy']++;
+            } elseif ($hasPendingDuty) {
+                $todayTeacherCounts['Pending']++;
+            } else {
+                $todayTeacherCounts['Absent']++;
+            }
+        }
         $dashboardMetrics = [
             ['label' => 'Scheduled duties', 'value' => $todayAssignments, 'color' => 'bg-blue-600'],
             ['label' => 'Present', 'value' => $statusCounts['Present'], 'color' => 'bg-emerald-600'],
@@ -51,6 +72,6 @@ class DashboardController extends RosterReportController
             ['label' => 'Total short time', 'value' => round($attendanceRows->sum('ShortMinutes'), 1).' min', 'color' => 'bg-rose-600'],
         ];
 
-        return view('dashboard', compact('totalRosterPeople', 'totalDevices', 'totalRosterShifts', 'todayAssignments', 'reportLocations', 'reportPeople', 'fromDate', 'toDate', 'statusFromDate', 'statusToDate', 'statusCounts', 'teacherAccuracy', 'dashboardMetrics'));
+        return view('dashboard', compact('totalRosterPeople', 'totalDevices', 'totalRosterShifts', 'todayAssignments', 'reportLocations', 'reportPeople', 'fromDate', 'toDate', 'statusFromDate', 'statusToDate', 'statusCounts', 'teacherAccuracy', 'todayDate', 'todayTeacherCounts', 'dashboardMetrics'));
     }
 }

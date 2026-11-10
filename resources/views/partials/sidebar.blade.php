@@ -31,7 +31,8 @@
             @if(isset($item['heading']))
                 <div class="px-3 pb-1 pt-3 text-[11px] font-semibold uppercase tracking-wider text-slate-500">{{ $item['heading'] }}</div>
             @else
-                <a href="{{ route($item['route']) }}" class="block rounded-lg px-4 py-2.5 text-sm font-medium {{ request()->routeIs($item['active'] ?? $item['route'].'*') ? 'bg-indigo-600/20 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">{{ $item['label'] }}</a>
+                @php($activePattern = $item['active'] ?? (str_ends_with($item['route'], '.index') ? str_replace('.index', '.*', $item['route']) : $item['route'].'*'))
+                <a href="{{ route($item['route']) }}" class="block rounded-lg px-4 py-2.5 text-sm font-medium {{ request()->routeIs($activePattern) ? 'bg-indigo-600/20 text-white' : 'text-slate-400 hover:bg-slate-800/60 hover:text-white' }}">{{ $item['label'] }}</a>
             @endif
         @endforeach
     </nav>

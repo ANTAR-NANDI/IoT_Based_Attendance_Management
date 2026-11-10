@@ -52,7 +52,7 @@ class RoutineImportController extends Controller
         ]);
     }
 
-    /** Refreshes the reference-only Teachers worksheet without changing routine rows. */
+    /** Refreshes the teacher lookup sheet and the calculated teacher details in the import sheet. */
     private function refreshTeacherWorksheet(string $path, array $teachers): void
     {
         if (!class_exists(\ZipArchive::class)) {
@@ -79,17 +79,52 @@ class RoutineImportController extends Controller
                 fn (array $match) => $match[1].$lastRow.$match[2],
                 $workbook
             );
-            $routineSheet = preg_replace_callback(
-                '/Teachers!\$A\$2:\$C\$\d+/',
-                fn () => 'Teachers!$A$2:$C$'.$lastRow,
-                $routineSheet
+            $workbook = preg_replace(
+                '/<calcPr\b[^>]*\/?>(?:<\/calcPr>)?/',
+                '<calcPr calcId="144525" calcMode="auto" fullCalcOnLoad="1" forceFullCalc="1"/>',
+                $workbook
             );
+            $routineSheet = $this->refreshTeacherFormulas($routineSheet, $lastRow);
 
             $zip->addFromString('xl/workbook.xml', $workbook);
             $zip->addFromString('xl/worksheets/sheet1.xml', $routineSheet);
         } finally {
             $zip->close();
         }
+    }
+
+    /**
+     * Teacher Name is the single user input.  Excel looks up its matching short
+     * name and employee code, so the file cannot accidentally combine details
+     * from two different teachers.
+     */
+    private function refreshTeacherFormulas(string $worksheet, int $lastTeacherRow): string
+    {
+        // The short name is calculated now, so leave only Teacher Name as a
+        // selectable field and prevent the lookup formula from being replaced.
+        $worksheet = preg_replace(
+            '/<dataValidation\\b(?=[^>]*sqref="F2:F501")[^>]*>.*?<\\/dataValidation>/',
+            '',
+            $worksheet
+        );
+
+        return preg_replace_callback(
+            '/<c r="([FG])(\d+)"[^>]*?(?:\/>|>.*?<\/c>)/s',
+            function (array $match) use ($lastTeacherRow): string {
+                $column = $match[1];
+                $row = (int) $match[2];
+                if ($row === 1) {
+                    return $match[0];
+                }
+
+                $lookupColumn = $column === 'F' ? 2 : 3;
+                $formula = 'IFERROR(IF(E'.$row.'&lt;&gt;"",VLOOKUP(E'.$row
+                    .',Teachers!$A$2:$C$'.$lastTeacherRow.','.$lookupColumn.',FALSE),""),"")';
+
+                return '<c r="'.$column.$row.'" s="5" t="str"><f>'.$formula.'</f><v/></c>';
+            },
+            $worksheet
+        );
     }
 
     private function teacherWorksheetXml(array $teachers, int $lastRow): string
