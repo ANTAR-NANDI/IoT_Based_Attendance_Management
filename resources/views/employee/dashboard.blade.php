@@ -1,12 +1,12 @@
 @extends('layouts.master')
 
-@section('title', 'Teacher Dashboard | ZKT Attendance System')
+@section('title', 'Faculty Dashboard | ZKT Attendance System')
 
 @section('content')
 <div class="space-y-6">
     <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-800 px-6 py-7 text-white shadow-lg">
         <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-            <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Teacher dashboard</p><h1 class="mt-2 text-3xl font-bold">Welcome back, {{ $person->PersonName }}</h1><p class="mt-2 text-sm text-blue-100">{{ $person->RoleName }}@if($person->SelectedDepartment) · {{ $person->SelectedDepartment }}@endif</p><p class="mt-4 text-sm text-blue-100">Your personal attendance summary for the selected date range.</p></div>
+            <div><p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Faculty dashboard</p><h1 class="mt-2 text-3xl font-bold">Welcome back, {{ $person->PersonName }}</h1><p class="mt-2 text-sm text-blue-100">{{ $person->RoleName }}@if($person->SelectedDepartment) · {{ $person->SelectedDepartment }}@endif</p><p class="mt-4 text-sm text-blue-100">Your personal attendance summary for the selected date range.</p></div>
             <a href="{{ route('employee.attendance.report', request()->only('from_date', 'to_date')) }}" class="rounded-xl bg-white px-5 py-3 text-center text-sm font-bold text-blue-800 shadow hover:bg-blue-50">View my report →</a>
         </div>
     </section>

@@ -83,13 +83,16 @@ class RosterReportController extends Controller
             ->orderBy('PunchTime')->get()->groupBy('DeviceID');
 
         $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
-        return $assignments->map(fn ($assignment) => $this->evaluate(
-            $assignment,
-            $logs,
-            $grace,
-            $holidays->get($assignment->RosterDate)
-                ?? ($weeklyHolidayDays->contains(Carbon::parse($assignment->RosterDate)->dayOfWeek) ? 'Weekly Holiday' : null)
-        ));
+        return $assignments->map(function ($assignment) use ($logs, $grace, $holidays, $weeklyHolidayDays) {
+            $holidayName = $holidays->get($assignment->RosterDate)
+                ?? ($weeklyHolidayDays->contains(Carbon::parse($assignment->RosterDate)->dayOfWeek) ? 'Weekly Holiday' : null);
+
+            // An explicitly scheduled exam remains active on a holiday and
+            // is evaluated from its own time frame and biometric punches.
+            if ($assignment->AssignmentType === 'Exam Duty') $holidayName = null;
+
+            return $this->evaluate($assignment, $logs, $grace, $holidayName);
+        });
     }
 
     protected function evaluate($a, $logs, $grace, ?string $holidayName = null): array
@@ -98,7 +101,7 @@ class RosterReportController extends Controller
         $end = Carbon::parse($a->RosterDate.' '.$a->EndTime);
         if ($a->CrossesMidnight || $end->lessThanOrEqualTo($start)) $end->addDay();
         $entryOpen = $start->copy()->subMinutes($grace->EntryEarlyMinutes);
-        $entryClose = $start->copy()->addMinutes($grace->EntryLateMinutes)->endOfMinute();
+        $entryClose = $start->copy()->addMinutes($this->entryGraceMinutes($grace, $a->RoleName))->endOfMinute();
         $exitOpen = $end->copy()->subMinutes($grace->ExitEarlyMinutes);
         $exitClose = $end->copy()->addMinutes($grace->ExitLateMinutes)->endOfMinute();
         $deviceLogs = ($logs->get($a->DeviceID) ?? collect())->filter(fn ($log) => Carbon::parse($log->PunchTime)->betweenIncluded($entryOpen, $exitClose))->values();
@@ -130,5 +133,15 @@ class RosterReportController extends Controller
             return $result;
         }
         return $result;
+    }
+
+    /** Returns the configured arrival grace period for the assigned person's role. */
+    protected function entryGraceMinutes($grace, string $roleName): int
+    {
+        return match (strtolower(trim($roleName))) {
+            'student' => (int) $grace->StudentGraceMinutes,
+            'teacher', 'faculty' => (int) $grace->TeacherGraceMinutes,
+            default => (int) $grace->EntryLateMinutes,
+        };
     }
 }

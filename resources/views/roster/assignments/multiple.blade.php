@@ -6,7 +6,7 @@
 @section('content')
 @php($rows = old('RoutineRows', [[]]))
 <div class="mx-auto max-w-7xl space-y-6">
-    <div class="flex justify-between"><div><h1 class="text-2xl font-bold">Add multiple class routines</h1><p class="text-sm text-slate-500">Add every room, subject, teacher, proxy teacher, and time slot in one save.</p></div><a href="{{ route('roster.assignments.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-white">Back</a></div>
+    <div class="flex justify-between"><div><h1 class="text-2xl font-bold">Add multiple class routines</h1><p class="text-sm text-slate-500">Add every room, subject, faculty member, proxy faculty member, and time slot in one save.</p></div><a href="{{ route('roster.assignments.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-white">Back</a></div>
     @if($errors->any())<div class="rounded border border-red-200 bg-red-50 p-4 text-red-700"><ul class="list-disc pl-5">@foreach($errors->all() as $error)<li>{{ $error }}</li>@endforeach</ul></div>@endif
     <form method="POST" action="{{ route('roster.assignments.store-multiple') }}" class="overflow-hidden rounded-xl border bg-white">@csrf
         <div class="bg-slate-800 px-6 py-4 font-semibold text-white">Settings shared by every class row in this time slot</div>
@@ -29,7 +29,7 @@
 <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
 <script>
 const container = document.getElementById('routine-rows'), template = document.getElementById('row-template'); let nextIndex = {{ count($rows) }};
-function initialiseSearchFields(scope = document) { $(scope).find('.select2-subject').select2({ placeholder: 'Search subject by code or name', width: '100%' }); $(scope).find('.select2-teacher').select2({ placeholder: 'Search teacher by name', width: '100%' }); }
+function initialiseSearchFields(scope = document) { $(scope).find('.select2-subject').select2({ placeholder: 'Search subject by code or name', width: '100%' }); $(scope).find('.select2-teacher').select2({ placeholder: 'Search faculty by name', width: '100%' }); }
 function filterRow(row) { const department = row.querySelector('.department').value; row.querySelectorAll('.filtered-option').forEach(option => { const matches = option.dataset.departmentId === department; option.hidden = !matches; option.disabled = !matches; }); row.querySelectorAll('.batch, .subject').forEach(select => { if (select.selectedOptions[0]?.dataset.departmentId !== department) select.value = ''; select.disabled = !department; if (select.classList.contains('select2-subject')) $(select).trigger('change.select2'); }); }
 document.getElementById('add-row').addEventListener('click', () => { container.insertAdjacentHTML('beforeend', template.innerHTML.replaceAll('__INDEX__', nextIndex++)); const row = container.lastElementChild; filterRow(row); initialiseSearchFields(row); });
 container.addEventListener('change', event => { const row = event.target.closest('.routine-row'); if (row && event.target.matches('.department')) filterRow(row); });

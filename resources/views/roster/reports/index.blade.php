@@ -4,7 +4,7 @@
 <div class="space-y-6">
     <div>
         <h1 class="text-2xl font-bold">Roster Attendance Report</h1>
-        <p class="text-sm text-slate-500">Teachers, security, technicians, electricians, proxy coverage, and total short timing.</p>
+        <p class="text-sm text-slate-500">Faculties, security, technicians, electricians, proxy coverage, and total short timing.</p>
     </div>
 
     <form class="rounded-xl border bg-white p-5">
@@ -17,7 +17,7 @@
     </form>
 
     <div class="overflow-hidden rounded-xl border bg-white">
-        <div class="border-b bg-slate-50 px-4 py-3 text-xs font-bold uppercase">Employee summary</div>
+        <div class="border-b bg-slate-50 px-4 py-3 text-xs font-bold uppercase">Faculty summary</div>
         <div class="overflow-x-auto"><table class="min-w-full text-sm"><thead class="bg-slate-100 text-left"><tr><th class="p-3">Person / role</th><th class="p-3">Duties</th><th class="p-3">Present</th><th class="p-3">Proxy</th><th class="p-3">Late</th><th class="p-3">Early out</th><th class="p-3">No out</th><th class="p-3">Absent</th><th class="p-3">Scheduled</th><th class="p-3">Actual</th><th class="p-3">Total short timing</th></tr></thead><tbody>
             @forelse($summary as $item)
             <tr class="border-t"><td class="p-3 font-medium">{{ $item['PersonName'] }}<div class="text-xs text-slate-500">{{ $item['RoleName'] }}</div></td><td class="p-3">{{ $item['Scheduled'] }}</td><td class="p-3 text-green-700">{{ $item['Present'] }}</td><td class="p-3 text-amber-700">{{ $item['Proxy'] }}</td><td class="p-3">{{ $item['Late'] }}</td><td class="p-3">{{ $item['EarlyOut'] }}</td><td class="p-3">{{ $item['NoPunchOut'] }}</td><td class="p-3 text-red-600">{{ $item['Absent'] }}</td><td class="p-3">{{ number_format((float) $item['ScheduledMinutes'], 2) }} min</td><td class="p-3">{{ number_format((float) $item['ActualMinutes'], 2) }} min</td><td class="p-3 font-semibold text-red-600">{{ number_format((float) $item['ShortMinutes'], 2) }} min</td></tr>
@@ -42,8 +42,8 @@
                 </td>
                 <td class="p-3">
                     @if($row['ActualPerson'])
-                        @if($row['Status'] === 'Proxy')<span class="font-medium text-amber-700">Proxy teacher: {{ $row['ActualPerson'] }}</span>
-                        @else Actual teacher: {{ $row['ActualPerson'] }}
+                        @if($row['Status'] === 'Proxy')<span class="font-medium text-amber-700">Proxy faculty: {{ $row['ActualPerson'] }}</span>
+                        @else Actual faculty: {{ $row['ActualPerson'] }}
                         @endif
                     @else —
                     @endif

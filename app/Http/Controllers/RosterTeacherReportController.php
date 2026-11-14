@@ -43,7 +43,7 @@ class RosterTeacherReportController extends RosterReportController
         $selectedPeople = DB::table('tblRosterPerson')->whereIn('RosterPersonID', $personIds)->orderBy('PersonName')->get();
         $rows = $this->attendanceRows($fromDate, $toDate, fn ($query) => $query->whereIn('ra.RosterPersonID', $personIds->all()));
         $matrix = $this->scheduleMatrix($rows);
-        $title = 'Teacher-wise Attendance Report';
+        $title = 'Faculty-wise Attendance Report';
         $subtitle = $selectedPeople->pluck('PersonName')->join(', ').' - '.\Carbon\Carbon::parse($fromDate)->format('d M Y').' to '.\Carbon\Carbon::parse($toDate)->format('d M Y');
         return Pdf::loadView('roster.reports.teacher-matrix-pdf', compact('matrix', 'selectedPeople', 'title', 'subtitle'))
             ->setPaper('a4', 'portrait')

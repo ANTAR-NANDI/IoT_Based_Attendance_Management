@@ -12,8 +12,8 @@
 @section('content')
 <div class="space-y-6">
     <div>
-        <h1 class="text-2xl font-bold">Teacher-wise Attendance Report</h1>
-        <p class="text-sm text-slate-500">Select a date range and one or more teachers or employees to compare their scheduled duties by time slot.</p>
+        <h1 class="text-2xl font-bold">Faculty-wise Attendance Report</h1>
+        <p class="text-sm text-slate-500">Select a date range and one or more faculties to compare their scheduled duties by time slot.</p>
     </div>
 
     <form class="rounded-xl border bg-white p-5" method="GET" action="{{ route('reports.teacher-attendance') }}">
@@ -27,16 +27,16 @@
                 <input type="date" name="to_date" value="{{ $toDate }}" class="mt-1 w-full rounded border p-2">
             </div>
             <div>
-                <label class="text-xs font-semibold">Teachers / employees</label>
+                <label class="text-xs font-semibold">Faculties</label>
                 <select required id="teacher-selector" name="RosterPersonIDs[]" multiple class="mt-1 w-full rounded border p-2">
                     @foreach($people as $item)
                         <option value="{{ $item->RosterPersonID }}" {{ $personIds->contains((int) $item->RosterPersonID) ? 'selected' : '' }}>{{ $item->PersonName }} — {{ $item->RoleName }}</option>
                     @endforeach
                 </select>
-                <p class="mt-1 text-xs text-slate-500">Search and select one or more teachers or employees.</p>
+                <p class="mt-1 text-xs text-slate-500">Search and select one or more faculties.</p>
             </div>
             <div class="self-end">
-                <button class="rounded-lg bg-indigo-600 px-5 py-2 text-white">View teacher report</button>
+                <button class="rounded-lg bg-indigo-600 px-5 py-2 text-white">View faculty report</button>
                 @if($selectedPeople->isNotEmpty())
                     <button type="button" id="teacher-pdf-preview-button" class="ml-2 rounded-lg bg-red-600 px-5 py-2 text-white">Preview / Print PDF</button>
                 @endif
@@ -93,10 +93,10 @@
 
         <div id="teacher-pdf-preview-panel" class="mt-6 hidden overflow-hidden rounded-xl border bg-white">
             <div class="flex items-center justify-between border-b px-4 py-3">
-                <h2 class="font-semibold">Teacher-wise PDF Preview</h2>
+                <h2 class="font-semibold">Faculty-wise PDF Preview</h2>
                 <a id="teacher-pdf-open-tab" href="#" target="_blank" class="text-sm font-semibold text-indigo-600">Open / print in new tab</a>
             </div>
-            <iframe id="teacher-pdf-preview-frame" title="Teacher-wise attendance PDF preview" class="h-[800px] w-full"></iframe>
+            <iframe id="teacher-pdf-preview-frame" title="Faculty-wise attendance PDF preview" class="h-[800px] w-full"></iframe>
         </div>
     @endif
 </div>
@@ -107,7 +107,7 @@
     <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
     <script>
         $(function () {
-            $('#teacher-selector').select2({ placeholder: 'Select teachers or employees', width: '100%', closeOnSelect: false });
+            $('#teacher-selector').select2({ placeholder: 'Select faculties', width: '100%', closeOnSelect: false });
             $('#teacher-pdf-preview-button').on('click', function () {
                 const form = $(this).closest('form')[0];
                 const query = new URLSearchParams(new FormData(form)).toString();

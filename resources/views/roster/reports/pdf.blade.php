@@ -9,7 +9,7 @@ table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; } th, td { 
 <h1>Army University - Roster Attendance Report</h1>
 <p>Period: {{ \Carbon\Carbon::parse($fromDate)->format('d M Y') }} to {{ \Carbon\Carbon::parse($toDate)->format('d M Y') }} | Role: {{ $role ?: 'All roles' }}</p>
 
-<h3>Employee Summary</h3>
+<h3>Faculty Summary</h3>
 <table><thead><tr><th>Person / Role</th><th>Duties</th><th>Present</th><th>Proxy</th><th>Late</th><th>Early Out</th><th>No Out</th><th>Absent</th><th>Scheduled</th><th>Actual</th><th>Short</th></tr></thead><tbody>
 @forelse($summary as $item)
 <tr><td><strong>{{ $item['PersonName'] }}</strong><br><span class="small">{{ $item['RoleName'] }}</span></td><td>{{ $item['Scheduled'] }}</td><td>{{ $item['Present'] }}</td><td>{{ $item['Proxy'] }}</td><td>{{ $item['Late'] }}</td><td>{{ $item['EarlyOut'] }}</td><td>{{ $item['NoPunchOut'] }}</td><td>{{ $item['Absent'] }}</td><td>{{ number_format((float) $item['ScheduledMinutes'], 2) }} min</td><td>{{ number_format((float) $item['ActualMinutes'], 2) }} min</td><td>{{ number_format((float) $item['ShortMinutes'], 2) }} min</td></tr>
@@ -33,7 +33,7 @@ table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; } th, td { 
 <td>{{ $row['Start'] }} - {{ $row['End'] }}</td>
 <td>
 @if($row['ActualPerson'])
-@if($row['Status'] === 'Proxy') Proxy teacher: {{ $row['ActualPerson'] }} @else Actual teacher: {{ $row['ActualPerson'] }} @endif
+@if($row['Status'] === 'Proxy') Proxy faculty: {{ $row['ActualPerson'] }} @else Actual faculty: {{ $row['ActualPerson'] }} @endif
 @else -
 @endif
 </td>

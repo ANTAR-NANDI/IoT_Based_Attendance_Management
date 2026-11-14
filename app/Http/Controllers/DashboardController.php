@@ -65,13 +65,15 @@ class DashboardController extends RosterReportController
                 $todayTeacherCounts['Absent']++;
             }
         }
-        $dashboardMetrics = [
-            ['label' => 'Scheduled duties', 'value' => $todayAssignments, 'color' => 'bg-blue-600'],
-            ['label' => 'Present', 'value' => $statusCounts['Present'], 'color' => 'bg-emerald-600'],
-            ['label' => 'Proxy coverage', 'value' => $statusCounts['Proxy'], 'color' => 'bg-amber-600'],
-            ['label' => 'Total short time', 'value' => round($attendanceRows->sum('ShortMinutes'), 1).' min', 'color' => 'bg-rose-600'],
-        ];
 
-        return view('dashboard', compact('totalRosterPeople', 'totalDevices', 'totalRosterShifts', 'todayAssignments', 'reportLocations', 'reportPeople', 'fromDate', 'toDate', 'statusFromDate', 'statusToDate', 'statusCounts', 'teacherAccuracy', 'todayDate', 'todayTeacherCounts', 'dashboardMetrics'));
+        // A class is "not taken" only after its check-in grace period has
+        // expired and neither the assigned faculty member nor a planned proxy
+        // has a valid attendance entry. Upcoming and running classes stay out
+        // of this operational exception list.
+        $classesNotTakenToday = $todayRows
+            ->whereIn('AssignmentType', ['Class Duty', 'Makeup Class', 'Rescheduled Class', 'Exam Duty'])
+            ->whereIn('Status', ['Absent', 'Late - Absent'])
+            ->values();
+        return view('dashboard', compact('totalRosterPeople', 'totalDevices', 'totalRosterShifts', 'todayAssignments', 'reportLocations', 'reportPeople', 'fromDate', 'toDate', 'statusFromDate', 'statusToDate', 'statusCounts', 'teacherAccuracy', 'todayDate', 'todayTeacherCounts', 'classesNotTakenToday'));
     }
 }

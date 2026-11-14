@@ -41,8 +41,8 @@ class RosterAssignmentController extends Controller
             $scheduled = [];
             foreach ($rows as $row) {
                 $candidate = $row + ['RosterDate' => $date];
-                if ($this->conflicts($candidate) || $this->conflictsWithBatch($candidate, $scheduled)) {
-                    return back()->withInput()->withErrors(['RoutineRows' => "Schedule conflict on {$date}. A teacher is already assigned during one of these class times."]);
+                if ($this->conflicts($candidate) || $this->roomConflicts($candidate) || $this->conflictsWithBatch($candidate, $scheduled)) {
+                    return back()->withInput()->withErrors(['RoutineRows' => "Schedule conflict on {$date}. A teacher or room is already assigned during one of these class times."]);
                 }
                 $scheduled[] = $candidate;
             }
@@ -74,6 +74,7 @@ class RosterAssignmentController extends Controller
         foreach ($dates as $date) {
             $candidate = array_merge($data, ['RosterDate' => $date]);
             if ($this->conflicts($candidate)) return back()->withInput()->withErrors(['RosterPersonID' => "Schedule conflict on {$date}. This person already has an overlapping duty."]);
+            if ($this->roomConflicts($candidate)) return back()->withInput()->withErrors(['RosterLocationID' => "Room conflict on {$date}. This room is already booked during the selected time frame."]);
         }
         $seriesId = (string) Str::uuid();
         DB::transaction(function () use ($data, $dates, $recurrence, $seriesId) {
@@ -107,6 +108,9 @@ class RosterAssignmentController extends Controller
             $candidate = array_merge($data, ['RosterDate' => $date]);
             if ($this->conflicts($candidate, $assignment->RosterSeriesID ? null : $id, $assignment->RosterSeriesID)) {
                 return back()->withInput()->withErrors(['RosterPersonID' => "Schedule conflict on {$date}. This person already has an overlapping duty."]);
+            }
+            if ($this->roomConflicts($candidate, $assignment->RosterSeriesID ? null : $id, $assignment->RosterSeriesID)) {
+                return back()->withInput()->withErrors(['RosterLocationID' => "Room conflict on {$date}. This room is already booked during the selected time frame."]);
             }
         }
 
@@ -172,14 +176,14 @@ class RosterAssignmentController extends Controller
             'CustomStartTime' => ['nullable', 'date_format:H:i'],
             'CustomEndTime' => ['nullable', 'date_format:H:i'],
             'RosterLocationID' => ['nullable', 'exists:tblRosterLocation,RosterLocationID'],
-            'AssignmentType' => ['required', Rule::in(['General Duty', 'Class Duty', 'Exam Duty', 'Other'])],
+            'AssignmentType' => ['required', Rule::in(['General Duty', 'Class Duty', 'Makeup Class', 'Rescheduled Class', 'Exam Duty', 'Other'])],
             'DepartmentID' => ['nullable', 'exists:tblDepartment,DepartmentID'],
             'BatchID' => ['nullable', 'exists:tblBatch,BatchID'],
             'SubjectID' => ['nullable', 'exists:tblSubject,SubjectID'],
             'Status' => ['required', Rule::in(['Active', 'Cancelled', 'Hold'])],
             'Remarks' => ['nullable', 'max:255'],
         ]);
-        if ($input['AssignmentType'] === 'Class Duty') {
+        if ($this->isAcademicClassType($input['AssignmentType'])) {
             foreach (['DepartmentID' => 'department', 'BatchID' => 'batch', 'SubjectID' => 'subject', 'RosterLocationID' => 'room'] as $field => $label) {
                 if (empty($input[$field])) throw \Illuminate\Validation\ValidationException::withMessages([$field => "Select the class {$label}."]);
             }
@@ -190,6 +194,7 @@ class RosterAssignmentController extends Controller
             if ((int) $batchDepartment !== (int) $input['DepartmentID']) throw \Illuminate\Validation\ValidationException::withMessages(['BatchID' => 'The batch must belong to the selected department.']);
         } elseif ($input['AssignmentType'] === 'Exam Duty') {
             if (empty($input['CustomStartTime']) || empty($input['CustomEndTime'])) throw \Illuminate\Validation\ValidationException::withMessages(['CustomStartTime' => 'Enter the exact exam start and end time.']);
+            if (empty($input['RosterLocationID'])) throw \Illuminate\Validation\ValidationException::withMessages(['RosterLocationID' => 'Select the exam room.']);
         } elseif (empty($input['RosterShiftID'])) {
             throw \Illuminate\Validation\ValidationException::withMessages(['RosterShiftID' => 'Select a shift template for a general, exam, or other duty.']);
         }
@@ -200,16 +205,19 @@ class RosterAssignmentController extends Controller
         if (!empty($input['RosterLocationID'])) {
             $deviceId = DB::table('tblRosterLocation')->where('RosterLocationID', $input['RosterLocationID'])->value('DeviceID');
             $deviceIsActive = $deviceId && DB::table('tblDevice')->where('DeviceID', $deviceId)->where('Status', 1)->exists();
-            if (!$deviceIsActive && $input['AssignmentType'] === 'Class Duty') {
+            if (!$deviceIsActive && $this->requiresAttendanceDevice($input['AssignmentType'])) {
                 throw \Illuminate\Validation\ValidationException::withMessages(['RosterLocationID' => 'This room has no active ZKT device. Add or activate its device in Room Setup first.']);
             }
             $input['DeviceID'] = $deviceIsActive ? $deviceId : null;
         }
         unset($input['EndDate'], $input['RepeatMode'], $input['Weekdays']);
         $shift = !empty($input['RosterShiftID']) ? DB::table('tblRosterShift')->where('RosterShiftID', $input['RosterShiftID'])->firstOrFail() : null;
-        $usesExactTime = in_array($input['AssignmentType'], ['Class Duty', 'Exam Duty'], true);
+        $usesExactTime = in_array($input['AssignmentType'], ['Class Duty', 'Makeup Class', 'Rescheduled Class', 'Exam Duty'], true);
         $customStart = $usesExactTime ? ($input['CustomStartTime'] ?? null) : null;
         $customEnd = $usesExactTime ? ($input['CustomEndTime'] ?? null) : null;
+        if ($customStart !== null && $customStart >= $customEnd) {
+            throw \Illuminate\Validation\ValidationException::withMessages(['CustomEndTime' => 'End time must be after start time.']);
+        }
         unset($input['CustomStartTime'], $input['CustomEndTime']);
         $grace = DB::table('tblRosterSetting')->where('id', 1)->firstOrFail();
         return $input + [
@@ -366,11 +374,44 @@ class RosterAssignmentController extends Controller
     {
         [$start, $end] = $this->times($candidate);
         foreach ($scheduled as $row) {
-            if ($row['RosterPersonID'] !== $candidate['RosterPersonID']) continue;
+            if ($row['RosterPersonID'] !== $candidate['RosterPersonID'] && $row['RosterLocationID'] !== $candidate['RosterLocationID']) continue;
             [$otherStart, $otherEnd] = $this->times($row);
             if ($start->lt($otherEnd) && $end->gt($otherStart)) return true;
         }
         return false;
+    }
+
+    private function roomConflicts(array $data, ?int $ignoreId = null, ?string $ignoreSeriesId = null): bool
+    {
+        if ($data['Status'] !== 'Active' || empty($data['RosterLocationID'])) return false;
+
+        [$candidateStart, $candidateEnd] = $this->times($data);
+        $existing = DB::table('tblRosterAssignment')
+            ->where('RosterLocationID', $data['RosterLocationID'])
+            ->where('Status', 'Active')
+            ->whereDate('RosterDate', $data['RosterDate'])
+            ->when($ignoreId, fn ($q) => $q->where('RosterAssignmentID', '!=', $ignoreId))
+            ->when($ignoreSeriesId, fn ($q) => $q->where(function ($seriesQuery) use ($ignoreSeriesId) {
+                $seriesQuery->whereNull('RosterSeriesID')->orWhere('RosterSeriesID', '!=', $ignoreSeriesId);
+            }))
+            ->get();
+
+        foreach ($existing as $row) {
+            [$start, $end] = $this->times((array) $row);
+            if ($candidateStart->lt($end) && $candidateEnd->gt($start)) return true;
+        }
+
+        return false;
+    }
+
+    private function isAcademicClassType(string $assignmentType): bool
+    {
+        return in_array($assignmentType, ['Class Duty', 'Makeup Class', 'Rescheduled Class'], true);
+    }
+
+    private function requiresAttendanceDevice(string $assignmentType): bool
+    {
+        return $this->isAcademicClassType($assignmentType) || $assignmentType === 'Exam Duty';
     }
 
     private function times(array $row): array

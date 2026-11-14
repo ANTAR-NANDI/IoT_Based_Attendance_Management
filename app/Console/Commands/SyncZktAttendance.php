@@ -52,7 +52,11 @@ class SyncZktAttendance extends Command
                 $query->whereNull('attendance.AttendanceLogID')
                     ->orWhereRaw('attendance.PunchTime <> transaction.punch_time')
                     ->orWhereRaw("COALESCE(attendance.PunchState, -1) <> COALESCE(transaction.punch_state, -1)")
-                    ->orWhereRaw("COALESCE(attendance.DeviceSerialNo, '') <> COALESCE(transaction.terminal_sn, '')");
+                    // The app table was created with utf8mb4_unicode_ci while
+                    // ZKT's iclock table uses utf8mb4_0900_ai_ci. Compare the
+                    // serials with one explicit collation so mixed database
+                    // collations never prevent a sync.
+                    ->orWhereRaw("CONVERT(COALESCE(attendance.DeviceSerialNo, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci <> CONVERT(COALESCE(transaction.terminal_sn, '') USING utf8mb4) COLLATE utf8mb4_unicode_ci");
             })
             ->select('transaction.*')
             ->orderBy('transaction.id');

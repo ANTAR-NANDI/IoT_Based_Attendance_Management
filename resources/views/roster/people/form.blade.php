@@ -3,24 +3,24 @@
 @section('content')
 <div class="w-full space-y-6">
     <div class="flex justify-between">
-        <div><h1 class="text-2xl font-bold">{{ $person ? 'Edit' : 'Add' }} Employee</h1><p class="text-sm text-slate-500">One employee can have a normal schedule, roster duties, or both.</p></div>
+        <div><h1 class="text-2xl font-bold">{{ $person ? 'Edit' : 'Add' }} Faculty</h1><p class="text-sm text-slate-500">A faculty member can have a normal schedule, roster duties, or both.</p></div>
         <a href="{{ route('roster.people.index') }}" class="rounded-lg bg-slate-700 px-4 py-2 text-white">Back</a>
     </div>
     <form method="POST" action="{{ $person ? route('roster.people.update', $person->RosterPersonID) : route('roster.people.store') }}" class="rounded-xl border bg-white p-6">
         @csrf
         @if($person) @method('PUT') @endif
         <div class="grid gap-5 md:grid-cols-2">
-            <div><label>Employee name *</label><input required name="PersonName" value="{{ old('PersonName', $person?->PersonName) }}" class="mt-1 w-full rounded border p-2"></div>
-            <div><label>Employee code</label><input name="EmployeeCode" value="{{ old('EmployeeCode', $person?->EmployeeCode) }}" class="mt-1 w-full rounded border p-2"></div>
-            <div><label>Teacher short name</label><input name="ShortName" value="{{ old('ShortName', $person?->ShortName) }}" placeholder="Example: DKR" class="mt-1 w-full rounded border p-2"><p class="mt-1 text-xs text-slate-500">Use the unique short form shown in routine sheets, such as DKR or SBF.</p></div>
+            <div><label>Faculty name *</label><input required name="PersonName" value="{{ old('PersonName', $person?->PersonName) }}" class="mt-1 w-full rounded border p-2"></div>
+            <div><label>Faculty code</label><input name="EmployeeCode" value="{{ old('EmployeeCode', $person?->EmployeeCode) }}" class="mt-1 w-full rounded border p-2"></div>
+            <div><label>Faculty short name</label><input name="ShortName" value="{{ old('ShortName', $person?->ShortName) }}" placeholder="Example: DKR" class="mt-1 w-full rounded border p-2"><p class="mt-1 text-xs text-slate-500">Use the unique short form shown in routine sheets, such as DKR or SBF.</p></div>
             <div><label>ZKT User ID</label><input name="ZKUserID" value="{{ old('ZKUserID', $person?->ZKUserID) }}" class="mt-1 w-full rounded border p-2"></div>
             <div><label>Department *</label><select required name="DepartmentID" class="mt-1 w-full rounded border p-2"><option value="">Select department</option>@foreach($departments as $d)<option value="{{ $d->DepartmentID }}" @selected(old('DepartmentID', $person?->DepartmentID) == $d->DepartmentID)>{{ $d->DepartmentName }}</option>@endforeach</select></div>
             <div><label>Designation *</label><select required name="DesignationID" class="mt-1 w-full rounded border p-2"><option value="">Select designation</option>@foreach($designations as $d)<option value="{{ $d->DesignationID }}" @selected(old('DesignationID', $person?->DesignationID) == $d->DesignationID)>{{ $d->DesignationName }}</option>@endforeach</select></div>
             <div><label>Schedule mode *</label><select name="WorkMode" class="mt-1 w-full rounded border p-2"><option value="Normal" @selected(old('WorkMode', $person?->WorkMode ?? 'Normal') === 'Normal')>Normal schedule</option><option value="Roster" @selected(old('WorkMode', $person?->WorkMode) === 'Roster')>Roster shift</option><option value="Both" @selected(old('WorkMode', $person?->WorkMode) === 'Both')>Normal + Roster</option></select></div>
-            <div><label>Employee status</label><select name="Status" class="mt-1 w-full rounded border p-2"><option value="1" @selected(old('Status', $person?->Status ?? 1) == 1)>Active</option><option value="0" @selected(old('Status', $person?->Status) == 0)>Inactive</option></select></div>
+            <div><label>Faculty status</label><select name="Status" class="mt-1 w-full rounded border p-2"><option value="1" @selected(old('Status', $person?->Status ?? 1) == 1)>Active</option><option value="0" @selected(old('Status', $person?->Status) == 0)>Inactive</option></select></div>
         </div>
-        <div class="mt-7 border-t pt-6"><h2 class="text-lg font-bold">Employee Portal Account</h2><p class="mt-1 text-sm text-slate-500">Optional. Creating an account lets this employee log in and see only their own attendance.</p><div class="mt-4 grid gap-5 md:grid-cols-2"><div><label>Login email</label><input type="email" name="AccountEmail" value="{{ old('AccountEmail', $account?->email) }}" class="mt-1 w-full rounded border p-2"></div><div><label>{{ $account ? 'New password (leave blank to keep current)' : 'Initial password' }}</label><input type="password" name="AccountPassword" autocomplete="new-password" class="mt-1 w-full rounded border p-2"></div><div><label>Confirm password</label><input type="password" name="AccountPassword_confirmation" autocomplete="new-password" class="mt-1 w-full rounded border p-2"></div></div></div>
-        <div class="mt-6 text-right"><button class="rounded-lg bg-green-600 px-5 py-2 text-white">Save Employee</button></div>
+        <div class="mt-7 border-t pt-6"><h2 class="text-lg font-bold">Faculty Portal Account</h2><p class="mt-1 text-sm text-slate-500">Optional. Creating an account lets this faculty member log in and see only their own attendance.</p><div class="mt-4 grid gap-5 md:grid-cols-2"><div><label>Login email</label><input type="email" name="AccountEmail" value="{{ old('AccountEmail', $account?->email) }}" class="mt-1 w-full rounded border p-2"></div><div><label>{{ $account ? 'New password (leave blank to keep current)' : 'Initial password' }}</label><input type="password" name="AccountPassword" autocomplete="new-password" class="mt-1 w-full rounded border p-2"></div><div><label>Confirm password</label><input type="password" name="AccountPassword_confirmation" autocomplete="new-password" class="mt-1 w-full rounded border p-2"></div></div></div>
+        <div class="mt-6 text-right"><button class="rounded-lg bg-green-600 px-5 py-2 text-white">Save Faculty</button></div>
     </form>
 </div>
 @endsection

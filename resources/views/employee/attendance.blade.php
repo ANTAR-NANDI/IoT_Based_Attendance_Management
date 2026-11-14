@@ -7,7 +7,7 @@
     <section class="overflow-hidden rounded-2xl bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-800 px-6 py-7 text-white shadow-lg">
         <div class="flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
             <div>
-                <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Teacher portal</p>
+                <p class="text-xs font-bold uppercase tracking-[0.18em] text-blue-200">Faculty portal</p>
                 <h1 class="mt-2 text-3xl font-bold">Welcome back, {{ $person->PersonName }}</h1>
                 <p class="mt-2 text-sm text-blue-100">{{ $person->RoleName }}@if($person->SelectedDepartment) · {{ $person->SelectedDepartment }}@endif</p>
                 <p class="mt-4 max-w-2xl text-sm text-blue-100">Review your scheduled duties, biometric attendance, holidays, and personal attendance report in one place.</p>
